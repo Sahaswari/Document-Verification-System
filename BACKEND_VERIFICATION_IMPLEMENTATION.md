@@ -2,11 +2,173 @@
 
 ## ✅ Implementation Status
 
-Both verification methods are **FULLY IMPLEMENTED** in the backend and ready for frontend integration.
+All **THREE** verification methods are **FULLY IMPLEMENTED** in the backend and ready for frontend integration.
 
 ---
 
-## 📋 Method 3: Verify by Student Index Number
+## 📋 Method 1: Verify by Verification Code (Database + Blockchain)
+
+### API Endpoint
+**File:** `backend/app/main.py`
+
+```python
+@app.route('/api/verify', methods=['POST'])
+def verify_certificate():
+```
+
+**Endpoint:** `POST /api/verify`
+
+**Request Body:**
+```json
+{
+  "verification_code": "DOE-OL2023-A1B2C3D4"
+}
+```
+
+**Also accepts:**
+```json
+{
+  "verificationCode": "DOE-OL2023-A1B2C3D4"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "valid": true,
+  "verified": true,
+  "message": "Certificate is valid and authentic",
+  "status": "VALID",
+  "certificate": {
+    "certificate_id": "550e8400-e29b-41d4-a716-446655440000",
+    "verification_code": "DOE-OL2023-A1B2C3D4",
+    "document_hash": "a1b2c3d4e5f6...",
+    "exam_type": "OL",
+    "exam_year": 2023,
+    "issued_at": "2023-12-01T10:30:00",
+    "result": {
+      "index_number": "2023OL123456",
+      "exam_type": "OL",
+      "exam_year": 2023,
+      "subjects": [
+        {"subject_name": "Mathematics", "grade": "A"},
+        {"subject_name": "Science", "grade": "B"}
+      ]
+    },
+    "student": {
+      "full_name": "K.A.B.C. Silva",
+      "full_name_sinhala": "කේ.ඒ.බී.සී. සිල්වා",
+      "full_name_tamil": null,
+      "name_with_initials": "K.A.B.C. Silva",
+      "date_of_birth": "2005-03-15",
+      "school_name": "Royal College, Colombo",
+      "district": "Colombo"
+    },
+    "blockchain": {
+      "verified_on_blockchain": true,
+      "blockchain_timestamp": 1737849600,
+      "blockchain_issuer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+    }
+  }
+}
+```
+
+**Not Found Response (200):**
+```json
+{
+  "valid": false,
+  "verified": false,
+  "message": "Certificate not found in the system",
+  "status": "NOT_FOUND"
+}
+```
+
+**Revoked Response (200):**
+```json
+{
+  "valid": false,
+  "verified": false,
+  "message": "This certificate has been revoked",
+  "status": "REVOKED",
+  "revoked_at": "2024-01-15T14:30:00",
+  "reason": "Fraudulent document detected"
+}
+```
+
+### How It Works
+
+```
+┌─────────────────┐
+│ Frontend sends  │
+│ verification    │
+│ code            │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│ Backend API validates input     │
+│ /api/verify                     │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│ Database lookup by code         │
+│ - Get full certificate          │
+│ - Get student details           │
+│ - Get exam results              │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│ Blockchain verification         │
+│ verifyDocument(hash)            │
+│ - Double check authenticity     │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│ Return comprehensive result:    │
+│ - Certificate details           │
+│ - Student information           │
+│ - All subjects & grades         │
+│ - Blockchain confirmation       │
+└─────────────────────────────────┘
+```
+
+### Testing
+
+**curl:**
+```bash
+curl -X POST http://localhost:5000/api/verify \
+  -H "Content-Type: application/json" \
+  -d '{"verification_code": "DOE-OL2023-A1B2C3D4"}'
+```
+
+**Python:**
+```python
+import requests
+
+response = requests.post(
+    'http://localhost:5000/api/verify',
+    json={'verification_code': 'DOE-OL2023-A1B2C3D4'}
+)
+print(response.json())
+```
+
+**JavaScript:**
+```javascript
+fetch('http://localhost:5000/api/verify', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ verification_code: 'DOE-OL2023-A1B2C3D4' })
+})
+.then(res => res.json())
+.then(data => console.log(data));
+```
+
+---
+
+## 📋 Method 2: Verify by Student Index Number (Blockchain Lookup)
 
 ### Smart Contract Function
 ```solidity
@@ -187,7 +349,7 @@ fetch('http://localhost:5000/api/certificate/verify-by-index', {
 
 ---
 
-## 📄 Method 4: Verify by File Upload
+## 📄 Method 3: Verify by File Upload (File Hash + Blockchain)
 
 ### Backend Service Method
 **File:** `backend/app/services/blockchain_service.py`

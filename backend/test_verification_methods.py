@@ -125,9 +125,9 @@ def test_verify_by_student_index(student_index):
 
 def test_verify_by_file_upload(file_path):
     """
-    Test Method 4: Verify certificate by uploading file
+    Test Method 3: Verify certificate by uploading file
     """
-    print_header("METHOD 4: Verify by File Upload")
+    print_header("METHOD 3: Verify by File Upload")
     print(f"File: {file_path}")
     
     try:
@@ -266,30 +266,39 @@ def check_blockchain_status():
 def main():
     """Main test runner"""
     print("\n" + "🔬 CERTIFICATE VERIFICATION TEST SUITE".center(70))
-    print("Testing Method 3 (Student Index) and Method 4 (File Upload)".center(70))
+    print("Testing ALL THREE Verification Methods".center(70))
     
     # Check prerequisites
     if not check_backend_health():
         sys.exit(1)
     
     if not check_blockchain_status():
-        print("\n⚠️  Warning: Blockchain not connected. Tests may fail.")
+        print("\n⚠️  Warning: Blockchain not connected. Some tests may fail.")
     
     # Test results
     results = []
     
-    # TEST 1: Verify by Student Index
-    print("\n" + "TEST 1: Student Index Verification".center(70, "-"))
-    test_index = input("\nEnter student index to test (e.g., 2023OL123456): ").strip()
+    # TEST 1: Verify by Verification Code
+    print("\n" + "TEST 1: Verification Code".center(70, "-"))
+    test_code = input("\nEnter verification code to test (e.g., DOE-OL2023-XXXXXXXX) or press Enter to skip: ").strip()
+    if test_code:
+        result = test_verify_by_code(test_code)
+        results.append(("Verification Code", result))
+    else:
+        print("⏭️  Skipping test...")
+    
+    # TEST 2: Verify by Student Index
+    print("\n" + "TEST 2: Student Index Verification".center(70, "-"))
+    test_index = input("\nEnter student index to test (e.g., 2023OL123456) or press Enter to skip: ").strip()
     if test_index:
         result = test_verify_by_student_index(test_index)
         results.append(("Student Index Verification", result))
     else:
         print("⏭️  Skipping test...")
     
-    # TEST 2: Verify by File Upload
-    print("\n" + "TEST 2: File Upload Verification".center(70, "-"))
-    test_file = input("\nEnter path to certificate file (or press Enter to skip): ").strip()
+    # TEST 3: Verify by File Upload
+    print("\n" + "TEST 3: File Upload Verification".center(70, "-"))
+    test_file = input("\nEnter path to certificate file or press Enter to skip: ").strip()
     if test_file:
         result = test_verify_by_file_upload(test_file)
         results.append(("File Upload Verification", result))
