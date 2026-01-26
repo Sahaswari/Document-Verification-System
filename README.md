@@ -26,7 +26,7 @@ Use CNN to detect image manipulation (cloning, splicing)
 Check for digital signatures or watermarks
 
 
-Frontend/Integration (Person 3):
+Frontend/Integration:
 
 Web interface (React/Vue.js) for document upload
 Connect to MetaMask for blockchain transactions
@@ -36,27 +36,141 @@ Show document history and chain of custody
 
 document-verification-system/
 │
-├── .gitignore                     ← Critical!
-├── README.md                      ← Installation guide
-├── docker-compose.yml             ← Optional but professional
+├── backend/                          # Python FastAPI Backend
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                   # FastAPI application
+│   │   ├── config.py                 # Configuration management
+│   │   │
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   └── v1/
+│   │   │       ├── __init__.py
+│   │   │       ├── endpoints/
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── documents.py  # Document upload/verify
+│   │   │       │   ├── analysis.py   # AI analysis
+│   │   │       │   └── health.py     # Health checks
+│   │   │       └── router.py
+│   │   │
+│   │   ├── models/                   # AI/ML Models
+│   │   │   ├── __init__.py
+│   │   │   ├── ocr_processor.py
+│   │   │   ├── forgery_detector.py
+│   │   │   └── document_analyzer.py
+│   │   │
+│   │   ├── schemas/                  # Pydantic models (validation)
+│   │   │   ├── __init__.py
+│   │   │   ├── document.py
+│   │   │   └── analysis.py
+│   │   │
+│   │   ├── services/                 # Business logic
+│   │   │   ├── __init__.py
+│   │   │   ├── document_service.py
+│   │   │   └── blockchain_service.py
+│   │   │
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       ├── hash_generator.py
+│   │       └── validators.py
+│   │
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_ocr.py
+│   │   └── test_api.py
+│   │
+│   ├── uploads/                      # Temporary storage
+│   ├── logs/                         # Application logs
+│   │
+│   ├── .env.example
+│   ├── .env.development
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── pytest.ini
+│   ├── Dockerfile
+│   └── README.md
 │
-├── blockchain/
-│   ├── .env                       ← Git ignored
-│   ├── .env.example               ← ✅ Committed
-│   ├── package.json               ← ✅ Committed
-│   ├── package-lock.json          ← ✅ Committed
-│   └── hardhat.config.js
+├── blockchain/                       # Smart Contracts
+│   ├── contracts/
+│   │   ├── DocumentVerification.sol
+│   │   └── interfaces/
+│   │       └── IDocumentVerification.sol
+│   │
+│   ├── scripts/
+│   │   ├── deploy.js
+│   │   └── verify.js
+│   │
+│   ├── test/
+│   │   └── DocumentVerification.test.js
+│   │
+│   ├── .env.example
+│   ├── hardhat.config.js
+│   ├── package.json
+│   └── README.md
 │
-├── ml-backend/
-│   ├── .env                       ← Git ignored
-│   ├── .env.example               ← ✅ Committed
-│   ├── requirements.txt           ← ✅ Committed (production)
-│   ├── requirements-dev.txt       ← ✅ Committed (dev tools)
-│   ├── app.py
-│   └── venv/                      ← Git ignored
+├── frontend/                         # React Application
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   │   ├── Button/
+│   │   │   │   ├── Input/
+│   │   │   │   └── Loader/
+│   │   │   ├── layout/
+│   │   │   │   ├── Header/
+│   │   │   │   └── Footer/
+│   │   │   ├── documents/
+│   │   │   │   ├── DocumentUpload/
+│   │   │   │   └── DocumentList/
+│   │   │   └── verification/
+│   │   │       ├── VerificationResult/
+│   │   │       └── AnalysisReport/
+│   │   │
+│   │   ├── hooks/
+│   │   │   ├── useWallet.js
+│   │   │   ├── useContract.js
+│   │   │   └── useDocument.js
+│   │   │
+│   │   ├── contexts/
+│   │   │   └── WalletContext.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   ├── api.js
+│   │   │   └── blockchain.js
+│   │   │
+│   │   ├── utils/
+│   │   │   ├── constants.js
+│   │   │   └── formatters.js
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Home/
+│   │   │   ├── Upload/
+│   │   │   └── Verify/
+│   │   │
+│   │   ├── App.jsx
+│   │   └── index.jsx
+│   │
+│   ├── .env.example
+│   ├── package.json
+│   └── README.md
 │
-└── frontend/
-    ├── .env                       ← Git ignored
-    ├── .env.example               ← ✅ Committed
-    ├── package.json               ← ✅ Committed
-    └── package-lock.json          ← ✅ Committed
+├── docker/
+│   ├── docker-compose.yml            # Local development
+│   └── docker-compose.test.yml       # Testing environment
+│
+├── docs/
+│   ├── API.md
+│   ├── ARCHITECTURE.md
+│   └── USER_GUIDE.md
+│
+├── scripts/
+│   ├── setup.sh
+│   ├── start-dev.sh
+│   └── run-tests.sh
+│
+├── .gitignore
+├── .env.example
+├── Makefile
+├── README.md
+└── CONTRIBUTING.md
