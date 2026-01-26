@@ -1,6 +1,48 @@
 # Document Verification System
 
-A blockchain-based document verification system with AI-powered forgery detection and OCR capabilities. This system uses smart contracts to ensure document authenticity and provides comprehensive analysis using machine learning techniques.
+A blockchain-based document verification system for Sri Lanka Department of Examinations (DOE) G.C.E. O/L and A/L certificate issuing and verification. This system uses smart contracts to ensure document authenticity and provides secure certificate management.
+
+---
+
+## 🔐 Default Login Credentials
+
+| Role | Username | Password | Description |
+|------|----------|----------|-------------|
+| **Admin** | `admin` | `admin123` | Full system access |
+| **Issuer** | `issuer` | `issuer123` | Certificate issuing officer |
+
+### Access URLs
+| Interface | URL | Description |
+|-----------|-----|-------------|
+| **Public Verification** | http://localhost:3000 | Verify certificates (no login required) |
+| **Staff Login** | http://localhost:3000/login | Login for DOE staff |
+| **Issuer Dashboard** | http://localhost:3000/issuer | Certificate issuing (after login) |
+| **Backend API** | http://localhost:5000 | REST API endpoints |
+| **Blockchain RPC** | http://localhost:8545 | Hardhat Ethereum node |
+
+---
+
+## 🗄️ Database Connection (PostgreSQL)
+
+Connect using Navicat, pgAdmin, or any PostgreSQL client:
+
+| Field | Value |
+|-------|-------|
+| **Host** | `localhost` |
+| **Port** | `5432` |
+| **Database** | `document_verification` |
+| **Username** | `docverify` |
+| **Password** | `docverify123` |
+
+### Database Tables
+- `students` - G.C.E exam candidates
+- `exam_results` - O/L and A/L results with subjects
+- `certificates` - Issued certificates with verification codes
+- `users` - System users and authentication
+
+---
+
+## 🚀 Quick Start
 
 ### Run the Application
 
@@ -15,11 +57,6 @@ docker-compose up --build
 # Or run in background (detached mode)
 docker-compose up -d
 ```
-
-**Access the application:**
-- 🌐 Frontend: http://localhost:3000
-- 🔧 Backend API: http://localhost:5000
-- ⛓️ Blockchain RPC: http://localhost:8545
 
 ### Stop the Application
 
