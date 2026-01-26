@@ -2,10 +2,16 @@
 flask==3.0.0
 flask-cors==4.0.0
 
+# Authentication
+PyJWT==2.8.0
+
 # Image Processing & OCR
 opencv-python==4.8.1.78
 pytesseract==0.3.10
 Pillow==10.1.0
+
+# PDF Generation
+reportlab==4.0.7
 
 # Image Hashing
 imagehash==4.3.1

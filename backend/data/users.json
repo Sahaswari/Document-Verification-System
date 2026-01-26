@@ -1,0 +1,29 @@
+[
+  {
+    "user_id": "USR-001",
+    "username": "admin",
+    "email": "admin@doenets.lk",
+    "password_hash": "3c20c545ebb601b0414499e5dd8680e5:e12a278a3edb8c777b430040c5b239193ec780f9d83dd6f418a68e24bfb28d2e",
+    "full_name": "System Administrator",
+    "role": "admin",
+    "designation": "System Administrator",
+    "department": "Department of Examinations",
+    "employee_id": "DOE-ADMIN-001",
+    "is_active": true,
+    "created_at": "2026-01-26T16:10:24.535577",
+    "last_login": "2026-01-26T16:13:10.404075"
+  },
+  {
+    "user_id": "USR-002",
+    "username": "issuer",
+    "email": "issuer@doenets.lk",
+    "password_hash": "42f96a2535fc615bb23d449b8f27959a:d37cd28b26ec3f69979736a7b723860aa8d3c99217e811307e61fc4201da834f",
+    "full_name": "Certificate Issuing Officer",
+    "role": "issuer",
+    "designation": "Senior Examinations Officer",
+    "department": "Department of Examinations",
+    "employee_id": "DOE-ISO-001",
+    "is_active": true,
+    "created_at": "2026-01-26T16:10:24.578769"
+  }
+]
