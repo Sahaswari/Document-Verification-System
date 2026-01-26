@@ -10,6 +10,8 @@ A blockchain-based document verification system for Sri Lanka Department of Exam
 |------|----------|----------|-------------|
 | **Admin** | `admin` | `admin123` | Full system access |
 | **Issuer** | `issuer` | `issuer123` | Certificate issuing officer |
+| **Data Entry** | `dataentry` | `data123` | Data entry operator |
+| **Verifier** | `verifier` | `verify123` | Verification officer |
 
 ### Access URLs
 | Interface | URL | Description |
@@ -39,6 +41,36 @@ Connect using Navicat, pgAdmin, or any PostgreSQL client:
 - `exam_results` - O/L and A/L results with subjects
 - `certificates` - Issued certificates with verification codes
 - `users` - System users and authentication
+
+---
+
+## 🌱 Automatic Test Data Seeding
+
+When the application starts with an **empty database**, it automatically seeds:
+
+| Data Type | Count | Description |
+|-----------|-------|-------------|
+| **Students** | 100 | Sri Lankan students with realistic names, NICs, schools |
+| **Exam Results** | 100 | O/L (60%) and A/L (40%) results with subjects |
+| **Certificates** | ~15 | Sample issued certificates with verification codes |
+| **Users** | 4 | System users (admin, issuer, data entry, verifier) |
+
+### Seed Data Features
+- **Realistic Sri Lankan Names**: Sinhala (80%) and Tamil (20%) names
+- **Schools**: From all 9 provinces across Sri Lanka
+- **Exam Types**: G.C.E O/L with 9 subjects, A/L with streams (Science, Commerce, Arts)
+- **Grades**: Realistic grade distribution (A, B, C, S, W)
+- **NIC Numbers**: Valid format based on date of birth
+- **A/L Features**: Z-scores, district/island ranks
+
+### Reset Database (Fresh Seed Data)
+```bash
+# Stop containers and remove database volume
+docker-compose down -v
+
+# Start again (fresh database with new seed data)
+docker-compose up --build
+```
 
 ---
 
