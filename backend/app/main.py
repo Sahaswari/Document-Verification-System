@@ -84,10 +84,15 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = None
         
+        # Check Authorization header first
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
             if auth_header.startswith('Bearer '):
                 token = auth_header.split(' ')[1]
+        
+        # Also check query parameter (for PDF viewing in new tabs)
+        if not token:
+            token = request.args.get('token')
         
         if not token:
             return jsonify({'error': 'Token is missing'}), 401
@@ -395,6 +400,68 @@ def issue_certificate(current_user):
     }), 201
 
 
+def generate_certificate_pdf_if_missing(certificate):
+    """Generate PDF for a certificate if it doesn't exist"""
+    pdf_path = certificate.get('pdf_path')
+    
+    # If PDF exists, return it
+    if pdf_path and os.path.exists(pdf_path):
+        return pdf_path, None
+    
+    # Get the result data for this certificate
+    result = db_service.get_result(certificate.get('result_id'))
+    if not result:
+        return None, "Result data not found for certificate"
+    
+    student = result.get('student')
+    if not student:
+        return None, "Student data not found for certificate"
+    
+    # Prepare data for PDF generation
+    student_data = {
+        'full_name': student.get('full_name', 'Unknown'),
+        'name_with_initials': student.get('name_with_initials', ''),
+        'date_of_birth': student.get('date_of_birth', ''),
+        'school_name': student.get('school_name', ''),
+        'index_number': certificate.get('index_number', '')
+    }
+    
+    result_data = {
+        'exam_type': certificate.get('exam_type', 'OL'),
+        'exam_year': certificate.get('exam_year', 2024),
+        'subjects': result.get('subjects', []),
+        'stream': result.get('stream', ''),
+        'z_score': result.get('z_score'),
+        'district_rank': result.get('district_rank'),
+        'island_rank': result.get('island_rank')
+    }
+    
+    # Prepare certificate data for PDF (must be a dict, not string)
+    certificate_data = {
+        'certificate_id': certificate.get('certificate_id', ''),
+        'verification_code': certificate.get('verification_code', ''),
+        'document_hash': certificate.get('document_hash', ''),
+        'issued_at': certificate.get('issued_at', ''),
+        'issued_by': certificate.get('issued_by', '')
+    }
+    
+    try:
+        # Generate the PDF
+        pdf_bytes, doc_hash, filepath = pdf_generator.generate_certificate(
+            student_data, result_data, certificate_data
+        )
+        
+        # Update the certificate record with the PDF path
+        db_service.update_certificate(certificate.get('certificate_id'), {
+            'pdf_path': filepath,
+            'document_hash': doc_hash
+        })
+        
+        return filepath, None
+    except Exception as e:
+        return None, f"PDF generation failed: {str(e)}"
+
+
 @app.route('/api/certificates/<certificate_id>/download', methods=['GET'])
 @token_required
 def download_certificate(current_user, certificate_id):
@@ -403,9 +470,12 @@ def download_certificate(current_user, certificate_id):
     if not certificate:
         return jsonify({'error': 'Certificate not found'}), 404
     
-    pdf_path = certificate.get('pdf_path')
-    if not pdf_path or not os.path.exists(pdf_path):
-        return jsonify({'error': 'PDF file not found'}), 404
+    # Generate PDF if it doesn't exist
+    pdf_path, error = generate_certificate_pdf_if_missing(certificate)
+    if error:
+        return jsonify({'error': error}), 500
+    if not pdf_path:
+        return jsonify({'error': 'Failed to generate PDF'}), 500
     
     return send_file(
         pdf_path,
@@ -423,9 +493,12 @@ def preview_certificate(current_user, certificate_id):
     if not certificate:
         return jsonify({'error': 'Certificate not found'}), 404
     
-    pdf_path = certificate.get('pdf_path')
-    if not pdf_path or not os.path.exists(pdf_path):
-        return jsonify({'error': 'PDF file not found'}), 404
+    # Generate PDF if it doesn't exist
+    pdf_path, error = generate_certificate_pdf_if_missing(certificate)
+    if error:
+        return jsonify({'error': error}), 500
+    if not pdf_path:
+        return jsonify({'error': 'Failed to generate PDF'}), 500
     
     return send_file(
         pdf_path,

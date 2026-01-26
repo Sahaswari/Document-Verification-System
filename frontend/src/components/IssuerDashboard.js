@@ -65,12 +65,23 @@ const IssuerDashboard = () => {
     setIssuing(null);
   };
 
-  const downloadCertificate = (certificateId) => {
+  const viewCertificatePdf = (certificateId) => {
     const token = localStorage.getItem('token');
     window.open(
-      `http://localhost:5000/api/certificates/${certificateId}/preview`,
+      `http://localhost:5000/api/certificates/${certificateId}/preview?token=${token}`,
       '_blank'
     );
+  };
+
+  const downloadCertificatePdf = (certificateId) => {
+    const token = localStorage.getItem('token');
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = `http://localhost:5000/api/certificates/${certificateId}/download?token=${token}`;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -260,7 +271,7 @@ const IssuerDashboard = () => {
                       <th>Year</th>
                       <th>Verification Code</th>
                       <th>Issued At</th>
-                      <th>Action</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -276,12 +287,20 @@ const IssuerDashboard = () => {
                         <td>{cert.exam_year}</td>
                         <td><code className="verification-code">{cert.verification_code}</code></td>
                         <td>{new Date(cert.issued_at).toLocaleDateString()}</td>
-                        <td>
+                        <td className="action-buttons">
+                          <button
+                            className="view-btn"
+                            onClick={() => viewCertificatePdf(cert.certificate_id)}
+                            title="View PDF in new tab"
+                          >
+                            👁️ View
+                          </button>
                           <button
                             className="download-btn"
-                            onClick={() => downloadCertificate(cert.certificate_id)}
+                            onClick={() => downloadCertificatePdf(cert.certificate_id)}
+                            title="Download PDF"
                           >
-                            📥 View PDF
+                            📥 Download
                           </button>
                         </td>
                       </tr>
