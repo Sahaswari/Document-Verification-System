@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Blockchain service (Hardhat node)
+  blockchain:
+    build:
+      context: ./blockchain
+      dockerfile: Dockerfile
+    container_name: doc-verify-blockchain
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./blockchain:/app
+      - /app/node_modules
+    networks:
+      - doc-verify-network
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8545"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+  # Backend service (Flask API)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: doc-verify-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - backend-uploads:/app/uploads
+      - backend-logs:/app/logs
+    networks:
+      - doc-verify-network
+    environment:
+      - FLASK_APP=app.main
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - BLOCKCHAIN_RPC_URL=http://blockchain:8545
+      - CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      blockchain:
+        condition: service_healthy
+    command: python -m flask run --host=0.0.0.0 --port=5000 --reload
+
+  # Frontend service (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: doc-verify-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - doc-verify-network
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_BLOCKCHAIN_RPC=http://localhost:8545
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+volumes:
+  backend-uploads:
+  backend-logs:
+
+networks:
+  doc-verify-network:
+    driver: bridge
