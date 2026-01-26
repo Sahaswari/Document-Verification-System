@@ -2,18 +2,11 @@
 
 A blockchain-based document verification system with AI-powered forgery detection and OCR capabilities. This system uses smart contracts to ensure document authenticity and provides comprehensive analysis using machine learning techniques.
 
-## 🚀 Quick Start with Docker
-
-### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running
-- Git (for version control)
-- At least 4GB RAM available
-
 ### Run the Application
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone <repo-url>
 cd "Document Verification System"
 
 # Start all services (blockchain + backend + frontend)
@@ -76,7 +69,7 @@ docker-compose down -v
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 document-verification-system/
@@ -134,7 +127,7 @@ document-verification-system/
 
 ---
 
-## 🐳 Docker Setup Details
+## Docker Setup Details
 
 ### Container Services
 
@@ -209,7 +202,7 @@ docker stats
 
 ---
 
-## 🛠️ Development Workflow
+## Development Workflow
 
 ### Making Code Changes
 
