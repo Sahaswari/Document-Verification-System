@@ -19,6 +19,15 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Register blueprints (API routes)
+try:
+    from api.certificate_routes import certificate_bp
+    app.register_blueprint(certificate_bp)
+    print("Blockchain certificate routes registered")
+except Exception as e:
+    print(f"Warning: Could not load certificate routes: {e}")
+    print("   Make sure blockchain is running and deployed")
+
 
 @app.route('/')
 def index():
