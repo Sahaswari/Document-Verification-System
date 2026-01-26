@@ -1,376 +1,585 @@
 """
-Simple JSON-based Database for Development
-In production, replace with PostgreSQL or MongoDB
+SQLAlchemy Database Service for Document Verification System
+PostgreSQL database for Students, Results, Certificates, and Users
 """
-import json
 import os
+import uuid
+import hashlib
 from datetime import datetime
 from typing import List, Dict, Optional
-import uuid
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import or_
+
+db = SQLAlchemy()
 
 
-class Database:
-    """Simple file-based database for development"""
+# ==================== MODELS ====================
+
+class Student(db.Model):
+    """Student model for G.C.E exam candidates"""
+    __tablename__ = 'students'
     
-    def __init__(self, data_dir: str = "data"):
-        self.data_dir = data_dir
-        os.makedirs(data_dir, exist_ok=True)
-        
-        # Initialize data files
-        self.files = {
-            "students": os.path.join(data_dir, "students.json"),
-            "results": os.path.join(data_dir, "results.json"),
-            "certificates": os.path.join(data_dir, "certificates.json"),
-            "users": os.path.join(data_dir, "users.json")
+    id = db.Column(db.Integer, primary_key=True)
+    index_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    full_name = db.Column(db.String(200), nullable=False)
+    full_name_sinhala = db.Column(db.String(200))
+    full_name_tamil = db.Column(db.String(200))
+    name_with_initials = db.Column(db.String(100))
+    nic_number = db.Column(db.String(20), index=True)
+    date_of_birth = db.Column(db.Date)
+    gender = db.Column(db.String(10))
+    school_name = db.Column(db.String(200))
+    school_code = db.Column(db.String(20))
+    district = db.Column(db.String(50))
+    province = db.Column(db.String(50))
+    medium = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    results = db.relationship('ExamResult', backref='student', lazy='dynamic')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'index_number': self.index_number,
+            'full_name': self.full_name,
+            'full_name_sinhala': self.full_name_sinhala,
+            'full_name_tamil': self.full_name_tamil,
+            'name_with_initials': self.name_with_initials,
+            'nic_number': self.nic_number,
+            'date_of_birth': self.date_of_birth.isoformat() if self.date_of_birth else None,
+            'gender': self.gender,
+            'school_name': self.school_name,
+            'school_code': self.school_code,
+            'district': self.district,
+            'province': self.province,
+            'medium': self.medium,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
-        
-        # Initialize empty files if not exist
-        for name, filepath in self.files.items():
-            if not os.path.exists(filepath):
-                self._save_data(filepath, [])
-        
-        # Initialize with sample data if empty
-        self._initialize_sample_data()
+
+
+class ExamResult(db.Model):
+    """Exam result model for O/L and A/L exams"""
+    __tablename__ = 'exam_results'
     
-    def _load_data(self, filepath: str) -> List[Dict]:
-        """Load data from JSON file"""
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
+    id = db.Column(db.Integer, primary_key=True)
+    result_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id'), nullable=False)
+    index_number = db.Column(db.String(50), nullable=False, index=True)
+    exam_type = db.Column(db.String(10), nullable=False)  # OL or AL
+    exam_year = db.Column(db.Integer, nullable=False)
+    stream = db.Column(db.String(50))  # For A/L: Science, Commerce, Arts, etc.
+    subjects = db.Column(JSON, nullable=False)  # List of subject results
+    status = db.Column(db.String(20), default='pending')  # pending, certified, revoked
+    attempt_number = db.Column(db.Integer, default=1)
+    is_private_candidate = db.Column(db.Boolean, default=False)
+    z_score = db.Column(db.Float)  # For A/L
+    district_rank = db.Column(db.Integer)
+    island_rank = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def _save_data(self, filepath: str, data: List[Dict]):
-        """Save data to JSON file"""
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+    # Relationships
+    certificate = db.relationship('Certificate', backref='result', uselist=False)
+    
+    def to_dict(self, include_student=False):
+        data = {
+            'id': self.id,
+            'result_id': self.result_id,
+            'student_id': self.student_id,
+            'index_number': self.index_number,
+            'exam_type': self.exam_type,
+            'exam_year': self.exam_year,
+            'stream': self.stream,
+            'subjects': self.subjects,
+            'status': self.status,
+            'attempt_number': self.attempt_number,
+            'is_private_candidate': self.is_private_candidate,
+            'z_score': self.z_score,
+            'district_rank': self.district_rank,
+            'island_rank': self.island_rank,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        if include_student and self.student:
+            data['student'] = self.student.to_dict()
+        return data
+
+
+class Certificate(db.Model):
+    """Certificate model for issued certificates"""
+    __tablename__ = 'certificates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    certificate_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    result_id = db.Column(db.String(50), db.ForeignKey('exam_results.result_id'), nullable=False)
+    index_number = db.Column(db.String(50), nullable=False, index=True)
+    exam_type = db.Column(db.String(10), nullable=False)
+    exam_year = db.Column(db.Integer, nullable=False)
+    verification_code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    document_hash = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    blockchain_tx_hash = db.Column(db.String(128))
+    issued_by = db.Column(db.String(50))  # User ID who issued
+    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='active')  # active, revoked
+    revoked_at = db.Column(db.DateTime)
+    revoked_by = db.Column(db.String(50))
+    revocation_reason = db.Column(db.Text)
+    pdf_path = db.Column(db.String(500))
+    
+    def to_dict(self, include_result=False):
+        data = {
+            'id': self.id,
+            'certificate_id': self.certificate_id,
+            'result_id': self.result_id,
+            'index_number': self.index_number,
+            'exam_type': self.exam_type,
+            'exam_year': self.exam_year,
+            'verification_code': self.verification_code,
+            'document_hash': self.document_hash,
+            'blockchain_tx_hash': self.blockchain_tx_hash,
+            'issued_by': self.issued_by,
+            'issued_at': self.issued_at.isoformat() if self.issued_at else None,
+            'status': self.status
+        }
+        if include_result and self.result:
+            data['result'] = self.result.to_dict(include_student=True)
+        return data
+    
+    @staticmethod
+    def generate_verification_code(exam_type: str, exam_year: int) -> str:
+        """Generate unique verification code"""
+        unique_id = uuid.uuid4().hex[:8].upper()
+        return f"DOE-{exam_type}{exam_year}-{unique_id}"
+    
+    @staticmethod
+    def generate_document_hash(data: dict) -> str:
+        """Generate document hash from certificate data"""
+        content = str(sorted(data.items())).encode()
+        return hashlib.sha256(content).hexdigest()
+
+
+class User(db.Model):
+    """User model for system users"""
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    username = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    full_name = db.Column(db.String(200))
+    role = db.Column(db.String(20), default='verifier')  # admin, issuer, verifier, data_entry
+    designation = db.Column(db.String(100))
+    department = db.Column(db.String(100))
+    employee_id = db.Column(db.String(50))
+    is_active = db.Column(db.Boolean, default=True)
+    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self, include_sensitive=False):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'username': self.username,
+            'email': self.email,
+            'full_name': self.full_name,
+            'role': self.role,
+            'designation': self.designation,
+            'department': self.department,
+            'employee_id': self.employee_id,
+            'is_active': self.is_active,
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        if include_sensitive:
+            data['password_hash'] = self.password_hash
+        return data
+    
+    @staticmethod
+    def hash_password(password: str) -> str:
+        """Hash a password using SHA-256"""
+        return hashlib.sha256(password.encode()).hexdigest()
+    
+    def verify_password(self, password: str) -> bool:
+        """Verify password against stored hash"""
+        return self.password_hash == self.hash_password(password)
+
+
+# ==================== DATABASE SERVICE CLASS ====================
+
+class DatabaseService:
+    """Service class for database operations"""
+    
+    def __init__(self, db_instance):
+        self.db = db_instance
     
     # ==================== STUDENTS ====================
     
     def get_all_students(self) -> List[Dict]:
-        """Get all students"""
-        return self._load_data(self.files["students"])
+        students = Student.query.all()
+        return [s.to_dict() for s in students]
     
     def get_student(self, index_number: str) -> Optional[Dict]:
-        """Get student by index number"""
-        students = self.get_all_students()
-        for student in students:
-            if student.get("index_number") == index_number:
-                return student
-        return None
+        student = Student.query.filter_by(index_number=index_number).first()
+        return student.to_dict() if student else None
+    
+    def get_student_by_id(self, student_id: int) -> Optional[Student]:
+        return Student.query.get(student_id)
     
     def add_student(self, student_data: Dict) -> Dict:
-        """Add new student"""
-        students = self.get_all_students()
-        students.append(student_data)
-        self._save_data(self.files["students"], students)
-        return student_data
+        # Convert date string to date object if needed
+        if 'date_of_birth' in student_data and isinstance(student_data['date_of_birth'], str):
+            student_data['date_of_birth'] = datetime.strptime(
+                student_data['date_of_birth'], '%Y-%m-%d'
+            ).date()
+        
+        student = Student(**student_data)
+        self.db.session.add(student)
+        self.db.session.commit()
+        return student.to_dict()
     
     def search_students(self, query: str) -> List[Dict]:
-        """Search students by name or index number"""
-        students = self.get_all_students()
-        query = query.lower()
-        return [
-            s for s in students
-            if query in s.get("index_number", "").lower()
-            or query in s.get("full_name", "").lower()
-            or query in s.get("nic_number", "").lower()
-        ]
+        search = f"%{query}%"
+        students = Student.query.filter(
+            or_(
+                Student.index_number.ilike(search),
+                Student.full_name.ilike(search),
+                Student.nic_number.ilike(search)
+            )
+        ).all()
+        return [s.to_dict() for s in students]
     
     # ==================== RESULTS ====================
     
     def get_all_results(self) -> List[Dict]:
-        """Get all exam results"""
-        return self._load_data(self.files["results"])
+        results = ExamResult.query.all()
+        return [r.to_dict(include_student=True) for r in results]
     
     def get_result(self, result_id: str) -> Optional[Dict]:
-        """Get result by ID"""
-        results = self.get_all_results()
-        for result in results:
-            if result.get("result_id") == result_id:
-                return result
-        return None
+        result = ExamResult.query.filter_by(result_id=result_id).first()
+        return result.to_dict(include_student=True) if result else None
+    
+    def get_result_obj(self, result_id: str) -> Optional[ExamResult]:
+        return ExamResult.query.filter_by(result_id=result_id).first()
     
     def get_results_by_index(self, index_number: str) -> List[Dict]:
-        """Get all results for a student"""
-        results = self.get_all_results()
-        return [r for r in results if r.get("index_number") == index_number]
+        results = ExamResult.query.filter_by(index_number=index_number).all()
+        return [r.to_dict(include_student=True) for r in results]
     
     def get_results_by_year(self, exam_year: int, exam_type: str = None) -> List[Dict]:
-        """Get results by exam year and optionally type"""
-        results = self.get_all_results()
-        filtered = [r for r in results if r.get("exam_year") == exam_year]
+        query = ExamResult.query.filter_by(exam_year=exam_year)
         if exam_type:
-            filtered = [r for r in filtered if r.get("exam_type") == exam_type]
-        return filtered
+            query = query.filter_by(exam_type=exam_type)
+        return [r.to_dict(include_student=True) for r in query.all()]
     
     def get_pending_results(self) -> List[Dict]:
-        """Get results pending certification"""
-        results = self.get_all_results()
-        return [r for r in results if r.get("status") == "pending"]
+        results = ExamResult.query.filter_by(status='pending').all()
+        return [r.to_dict(include_student=True) for r in results]
     
     def add_result(self, result_data: Dict) -> Dict:
-        """Add new exam result"""
-        results = self.get_all_results()
-        if not result_data.get("result_id"):
-            result_data["result_id"] = str(uuid.uuid4())
-        result_data["created_at"] = datetime.now().isoformat()
-        results.append(result_data)
-        self._save_data(self.files["results"], results)
-        return result_data
+        # Get student ID if only index_number provided
+        if 'student_id' not in result_data:
+            student = Student.query.filter_by(
+                index_number=result_data.get('index_number')
+            ).first()
+            if student:
+                result_data['student_id'] = student.id
+            else:
+                raise ValueError("Student not found for the given index number")
+        
+        if not result_data.get('result_id'):
+            result_data['result_id'] = f"RES-{uuid.uuid4().hex[:12].upper()}"
+        
+        result = ExamResult(**result_data)
+        self.db.session.add(result)
+        self.db.session.commit()
+        return result.to_dict(include_student=True)
     
     def update_result(self, result_id: str, updates: Dict) -> Optional[Dict]:
-        """Update exam result"""
-        results = self.get_all_results()
-        for i, result in enumerate(results):
-            if result.get("result_id") == result_id:
-                results[i].update(updates)
-                self._save_data(self.files["results"], results)
-                return results[i]
+        result = ExamResult.query.filter_by(result_id=result_id).first()
+        if result:
+            for key, value in updates.items():
+                if hasattr(result, key):
+                    setattr(result, key, value)
+            self.db.session.commit()
+            return result.to_dict(include_student=True)
         return None
     
     # ==================== CERTIFICATES ====================
     
     def get_all_certificates(self) -> List[Dict]:
-        """Get all certificates"""
-        return self._load_data(self.files["certificates"])
+        certificates = Certificate.query.order_by(Certificate.issued_at.desc()).all()
+        return [c.to_dict() for c in certificates]
     
     def get_certificate(self, certificate_id: str) -> Optional[Dict]:
-        """Get certificate by ID"""
-        certificates = self.get_all_certificates()
-        for cert in certificates:
-            if cert.get("certificate_id") == certificate_id:
-                return cert
-        return None
+        cert = Certificate.query.filter_by(certificate_id=certificate_id).first()
+        return cert.to_dict(include_result=True) if cert else None
+    
+    def get_certificate_obj(self, certificate_id: str) -> Optional[Certificate]:
+        return Certificate.query.filter_by(certificate_id=certificate_id).first()
+    
+    def get_certificate_by_verification_code(self, code: str) -> Optional[Dict]:
+        cert = Certificate.query.filter_by(verification_code=code).first()
+        return cert.to_dict(include_result=True) if cert else None
     
     def get_certificate_by_hash(self, document_hash: str) -> Optional[Dict]:
-        """Get certificate by document hash"""
-        certificates = self.get_all_certificates()
-        for cert in certificates:
-            if cert.get("document_hash") == document_hash:
-                return cert
-        return None
+        cert = Certificate.query.filter_by(document_hash=document_hash).first()
+        return cert.to_dict(include_result=True) if cert else None
     
     def get_certificates_by_index(self, index_number: str) -> List[Dict]:
-        """Get all certificates for a student"""
-        certificates = self.get_all_certificates()
-        return [c for c in certificates if c.get("index_number") == index_number]
+        certificates = Certificate.query.filter_by(index_number=index_number).all()
+        return [c.to_dict() for c in certificates]
     
     def add_certificate(self, cert_data: Dict) -> Dict:
-        """Add new certificate"""
-        certificates = self.get_all_certificates()
-        if not cert_data.get("certificate_id"):
-            cert_data["certificate_id"] = str(uuid.uuid4())
-        cert_data["issued_at"] = datetime.now().isoformat()
-        certificates.append(cert_data)
-        self._save_data(self.files["certificates"], certificates)
-        return cert_data
+        if not cert_data.get('certificate_id'):
+            cert_data['certificate_id'] = f"CERT-{uuid.uuid4().hex[:12].upper()}"
+        
+        if not cert_data.get('verification_code'):
+            cert_data['verification_code'] = Certificate.generate_verification_code(
+                cert_data.get('exam_type', 'OL'),
+                cert_data.get('exam_year', datetime.now().year)
+            )
+        
+        if not cert_data.get('document_hash'):
+            cert_data['document_hash'] = Certificate.generate_document_hash(cert_data)
+        
+        cert = Certificate(**cert_data)
+        self.db.session.add(cert)
+        self.db.session.commit()
+        return cert.to_dict()
     
     def update_certificate(self, certificate_id: str, updates: Dict) -> Optional[Dict]:
-        """Update certificate"""
-        certificates = self.get_all_certificates()
-        for i, cert in enumerate(certificates):
-            if cert.get("certificate_id") == certificate_id:
-                certificates[i].update(updates)
-                self._save_data(self.files["certificates"], certificates)
-                return certificates[i]
+        cert = Certificate.query.filter_by(certificate_id=certificate_id).first()
+        if cert:
+            for key, value in updates.items():
+                if hasattr(cert, key):
+                    setattr(cert, key, value)
+            self.db.session.commit()
+            return cert.to_dict()
         return None
     
     # ==================== USERS ====================
     
     def get_all_users(self) -> List[Dict]:
-        """Get all users"""
-        return self._load_data(self.files["users"])
+        users = User.query.all()
+        return [u.to_dict() for u in users]
     
     def get_user(self, user_id: str) -> Optional[Dict]:
-        """Get user by ID"""
-        users = self.get_all_users()
-        for user in users:
-            if user.get("user_id") == user_id:
-                return user
-        return None
+        user = User.query.filter_by(user_id=user_id).first()
+        return user.to_dict(include_sensitive=True) if user else None
     
     def get_user_by_username(self, username: str) -> Optional[Dict]:
-        """Get user by username"""
-        users = self.get_all_users()
-        for user in users:
-            if user.get("username") == username:
-                return user
-        return None
+        user = User.query.filter_by(username=username).first()
+        return user.to_dict(include_sensitive=True) if user else None
+    
+    def get_user_obj(self, user_id: str) -> Optional[User]:
+        return User.query.filter_by(user_id=user_id).first()
     
     def add_user(self, user_data: Dict) -> Dict:
-        """Add new user"""
-        users = self.get_all_users()
-        if not user_data.get("user_id"):
-            user_data["user_id"] = str(uuid.uuid4())
-        user_data["created_at"] = datetime.now().isoformat()
-        users.append(user_data)
-        self._save_data(self.files["users"], users)
-        return user_data
+        if not user_data.get('user_id'):
+            user_data['user_id'] = f"USR-{uuid.uuid4().hex[:8].upper()}"
+        
+        user = User(**user_data)
+        self.db.session.add(user)
+        self.db.session.commit()
+        return user.to_dict()
     
     def update_user(self, user_id: str, updates: Dict) -> Optional[Dict]:
-        """Update user"""
-        users = self.get_all_users()
-        for i, user in enumerate(users):
-            if user.get("user_id") == user_id:
-                users[i].update(updates)
-                self._save_data(self.files["users"], users)
-                return users[i]
+        user = User.query.filter_by(user_id=user_id).first()
+        if user:
+            for key, value in updates.items():
+                if hasattr(user, key):
+                    setattr(user, key, value)
+            self.db.session.commit()
+            return user.to_dict()
         return None
     
-    # ==================== SAMPLE DATA ====================
+    def update_last_login(self, user_id: str):
+        user = User.query.filter_by(user_id=user_id).first()
+        if user:
+            user.last_login = datetime.utcnow()
+            self.db.session.commit()
     
-    def _initialize_sample_data(self):
-        """Initialize with sample data for testing"""
-        students = self.get_all_students()
-        results = self.get_all_results()
-        users = self.get_all_users()
-        
-        # Add sample students if empty
-        if not students:
-            sample_students = [
-                {
-                    "index_number": "2024-OL-123456",
-                    "full_name": "Kamal Perera",
-                    "name_with_initials": "K. Perera",
-                    "nic_number": "200512345678",
-                    "date_of_birth": "2005-03-15",
-                    "gender": "Male",
-                    "school_name": "Royal College, Colombo",
-                    "school_code": "RC001",
-                    "district": "Colombo",
-                    "province": "Western",
-                    "medium": "Sinhala"
-                },
-                {
-                    "index_number": "2024-OL-123457",
-                    "full_name": "Nimal Silva",
-                    "name_with_initials": "N. Silva",
-                    "nic_number": "200534567890",
-                    "date_of_birth": "2005-07-22",
-                    "gender": "Male",
-                    "school_name": "Ananda College, Colombo",
-                    "school_code": "AC001",
-                    "district": "Colombo",
-                    "province": "Western",
-                    "medium": "Sinhala"
-                },
-                {
-                    "index_number": "2023-AL-789012",
-                    "full_name": "Sanduni Fernando",
-                    "name_with_initials": "S. Fernando",
-                    "nic_number": "200312345123",
-                    "date_of_birth": "2003-11-08",
-                    "gender": "Female",
-                    "school_name": "Visakha Vidyalaya, Colombo",
-                    "school_code": "VV001",
-                    "district": "Colombo",
-                    "province": "Western",
-                    "medium": "Sinhala"
-                }
-            ]
-            for student in sample_students:
-                self.add_student(student)
-        
-        # Add sample results if empty
-        if not results:
-            sample_results = [
-                {
-                    "result_id": "RES-2024-OL-001",
-                    "index_number": "2024-OL-123456",
-                    "exam_type": "OL",
-                    "exam_year": 2024,
-                    "subjects": [
-                        {"subject_code": "01", "subject_name": "Buddhism", "grade": "A"},
-                        {"subject_code": "02", "subject_name": "Sinhala Language & Literature", "grade": "A"},
-                        {"subject_code": "03", "subject_name": "English", "grade": "B"},
-                        {"subject_code": "04", "subject_name": "History", "grade": "A"},
-                        {"subject_code": "05", "subject_name": "Mathematics", "grade": "A"},
-                        {"subject_code": "06", "subject_name": "Science", "grade": "A"},
-                        {"subject_code": "07", "subject_name": "Geography", "grade": "B"},
-                        {"subject_code": "08", "subject_name": "Civics", "grade": "A"},
-                        {"subject_code": "09", "subject_name": "Information & Communication Technology", "grade": "A"}
-                    ],
-                    "status": "pending",
-                    "attempt_number": 1,
-                    "is_private_candidate": False
-                },
-                {
-                    "result_id": "RES-2024-OL-002",
-                    "index_number": "2024-OL-123457",
-                    "exam_type": "OL",
-                    "exam_year": 2024,
-                    "subjects": [
-                        {"subject_code": "01", "subject_name": "Buddhism", "grade": "B"},
-                        {"subject_code": "02", "subject_name": "Sinhala Language & Literature", "grade": "B"},
-                        {"subject_code": "03", "subject_name": "English", "grade": "C"},
-                        {"subject_code": "04", "subject_name": "History", "grade": "B"},
-                        {"subject_code": "05", "subject_name": "Mathematics", "grade": "A"},
-                        {"subject_code": "06", "subject_name": "Science", "grade": "B"},
-                        {"subject_code": "07", "subject_name": "Commerce", "grade": "A"},
-                        {"subject_code": "08", "subject_name": "Accounting", "grade": "A"},
-                        {"subject_code": "09", "subject_name": "Information & Communication Technology", "grade": "B"}
-                    ],
-                    "status": "pending",
-                    "attempt_number": 1,
-                    "is_private_candidate": False
-                },
-                {
-                    "result_id": "RES-2023-AL-001",
-                    "index_number": "2023-AL-789012",
-                    "exam_type": "AL",
-                    "exam_year": 2023,
-                    "stream": "Biological Science",
-                    "subjects": [
-                        {"subject_code": "01", "subject_name": "Biology", "grade": "A"},
-                        {"subject_code": "02", "subject_name": "Chemistry", "grade": "A"},
-                        {"subject_code": "03", "subject_name": "Physics", "grade": "B"},
-                        {"subject_code": "04", "subject_name": "General English", "grade": "B"}
-                    ],
-                    "status": "pending",
-                    "attempt_number": 1,
-                    "is_private_candidate": False,
-                    "z_score": 1.8234,
-                    "district_rank": 45,
-                    "island_rank": 234
-                }
-            ]
-            for result in sample_results:
-                self.add_result(result)
-        
-        # Add default admin user if empty
-        if not users:
-            from app.models.user import User
-            admin_password = User.hash_password("admin123")
-            sample_users = [
-                {
-                    "user_id": "USR-001",
-                    "username": "admin",
-                    "email": "admin@doenets.lk",
-                    "password_hash": admin_password,
-                    "full_name": "System Administrator",
-                    "role": "admin",
-                    "designation": "System Administrator",
-                    "department": "Department of Examinations",
-                    "employee_id": "DOE-ADMIN-001",
-                    "is_active": True
-                },
-                {
-                    "user_id": "USR-002",
-                    "username": "issuer",
-                    "email": "issuer@doenets.lk",
-                    "password_hash": User.hash_password("issuer123"),
-                    "full_name": "Certificate Issuing Officer",
-                    "role": "issuer",
-                    "designation": "Senior Examinations Officer",
-                    "department": "Department of Examinations",
-                    "employee_id": "DOE-ISO-001",
-                    "is_active": True
-                }
-            ]
-            for user in sample_users:
-                self.add_user(user)
+    # ==================== STATS ====================
+    
+    def get_stats(self) -> Dict:
+        return {
+            'total_students': Student.query.count(),
+            'total_results': ExamResult.query.count(),
+            'pending_certification': ExamResult.query.filter_by(status='pending').count(),
+            'certificates_issued': Certificate.query.filter_by(status='active').count(),
+            'ol_results': ExamResult.query.filter_by(exam_type='OL').count(),
+            'al_results': ExamResult.query.filter_by(exam_type='AL').count()
+        }
 
 
-# Global database instance
-db = Database(data_dir=os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
+# ==================== SAMPLE DATA INITIALIZATION ====================
+
+def init_sample_data(db_service: DatabaseService):
+    """Initialize database with sample data if empty"""
+    
+    # Check if data already exists
+    if Student.query.first() is not None:
+        return
+    
+    print("Initializing sample data...")
+    
+    # Sample Students
+    sample_students = [
+        {
+            'index_number': '2024-OL-123456',
+            'full_name': 'Kamal Perera',
+            'full_name_sinhala': 'කමල් පෙරේරා',
+            'full_name_tamil': 'கமல் பெரேரா',
+            'name_with_initials': 'K. Perera',
+            'nic_number': '200512345678',
+            'date_of_birth': '2005-03-15',
+            'gender': 'Male',
+            'school_name': 'Royal College, Colombo',
+            'school_code': 'RC001',
+            'district': 'Colombo',
+            'province': 'Western',
+            'medium': 'Sinhala'
+        },
+        {
+            'index_number': '2024-OL-123457',
+            'full_name': 'Nimal Silva',
+            'full_name_sinhala': 'නිමල් සිල්වා',
+            'full_name_tamil': 'நிமல் சில்வா',
+            'name_with_initials': 'N. Silva',
+            'nic_number': '200534567890',
+            'date_of_birth': '2005-07-22',
+            'gender': 'Male',
+            'school_name': 'Ananda College, Colombo',
+            'school_code': 'AC001',
+            'district': 'Colombo',
+            'province': 'Western',
+            'medium': 'Sinhala'
+        },
+        {
+            'index_number': '2023-AL-789012',
+            'full_name': 'Sanduni Fernando',
+            'full_name_sinhala': 'සඳුනි ප්‍රනාන්දු',
+            'full_name_tamil': 'சந்துனி பெர்னான்டோ',
+            'name_with_initials': 'S. Fernando',
+            'nic_number': '200312345123',
+            'date_of_birth': '2003-11-08',
+            'gender': 'Female',
+            'school_name': 'Visakha Vidyalaya, Colombo',
+            'school_code': 'VV001',
+            'district': 'Colombo',
+            'province': 'Western',
+            'medium': 'Sinhala'
+        }
+    ]
+    
+    students_map = {}
+    for student_data in sample_students:
+        student = db_service.add_student(student_data)
+        students_map[student['index_number']] = student
+    
+    # Sample Results
+    sample_results = [
+        {
+            'result_id': 'RES-2024-OL-001',
+            'index_number': '2024-OL-123456',
+            'exam_type': 'OL',
+            'exam_year': 2024,
+            'subjects': [
+                {'subject_code': '01', 'subject_name': 'Buddhism', 'grade': 'A'},
+                {'subject_code': '02', 'subject_name': 'Sinhala Language & Literature', 'grade': 'A'},
+                {'subject_code': '03', 'subject_name': 'English', 'grade': 'B'},
+                {'subject_code': '04', 'subject_name': 'History', 'grade': 'A'},
+                {'subject_code': '05', 'subject_name': 'Mathematics', 'grade': 'A'},
+                {'subject_code': '06', 'subject_name': 'Science', 'grade': 'A'},
+                {'subject_code': '07', 'subject_name': 'Geography', 'grade': 'B'},
+                {'subject_code': '08', 'subject_name': 'Civics', 'grade': 'A'},
+                {'subject_code': '09', 'subject_name': 'Information & Communication Technology', 'grade': 'A'}
+            ],
+            'status': 'pending',
+            'attempt_number': 1,
+            'is_private_candidate': False
+        },
+        {
+            'result_id': 'RES-2024-OL-002',
+            'index_number': '2024-OL-123457',
+            'exam_type': 'OL',
+            'exam_year': 2024,
+            'subjects': [
+                {'subject_code': '01', 'subject_name': 'Buddhism', 'grade': 'B'},
+                {'subject_code': '02', 'subject_name': 'Sinhala Language & Literature', 'grade': 'B'},
+                {'subject_code': '03', 'subject_name': 'English', 'grade': 'C'},
+                {'subject_code': '04', 'subject_name': 'History', 'grade': 'B'},
+                {'subject_code': '05', 'subject_name': 'Mathematics', 'grade': 'A'},
+                {'subject_code': '06', 'subject_name': 'Science', 'grade': 'B'},
+                {'subject_code': '07', 'subject_name': 'Commerce', 'grade': 'A'},
+                {'subject_code': '08', 'subject_name': 'Accounting', 'grade': 'A'},
+                {'subject_code': '09', 'subject_name': 'Information & Communication Technology', 'grade': 'B'}
+            ],
+            'status': 'pending',
+            'attempt_number': 1,
+            'is_private_candidate': False
+        },
+        {
+            'result_id': 'RES-2023-AL-001',
+            'index_number': '2023-AL-789012',
+            'exam_type': 'AL',
+            'exam_year': 2023,
+            'stream': 'Biological Science',
+            'subjects': [
+                {'subject_code': '01', 'subject_name': 'Biology', 'grade': 'A'},
+                {'subject_code': '02', 'subject_name': 'Chemistry', 'grade': 'A'},
+                {'subject_code': '03', 'subject_name': 'Physics', 'grade': 'B'},
+                {'subject_code': '04', 'subject_name': 'General English', 'grade': 'B'}
+            ],
+            'status': 'pending',
+            'attempt_number': 1,
+            'is_private_candidate': False,
+            'z_score': 1.8234,
+            'district_rank': 45,
+            'island_rank': 234
+        }
+    ]
+    
+    # Get student IDs for results
+    for result_data in sample_results:
+        student = Student.query.filter_by(index_number=result_data['index_number']).first()
+        if student:
+            result_data['student_id'] = student.id
+            db_service.add_result(result_data)
+    
+    # Sample Users
+    sample_users = [
+        {
+            'user_id': 'USR-001',
+            'username': 'admin',
+            'email': 'admin@doenets.lk',
+            'password_hash': User.hash_password('admin123'),
+            'full_name': 'System Administrator',
+            'role': 'admin',
+            'designation': 'System Administrator',
+            'department': 'Department of Examinations',
+            'employee_id': 'DOE-ADMIN-001',
+            'is_active': True
+        },
+        {
+            'user_id': 'USR-002',
+            'username': 'issuer',
+            'email': 'issuer@doenets.lk',
+            'password_hash': User.hash_password('issuer123'),
+            'full_name': 'Certificate Issuing Officer',
+            'role': 'issuer',
+            'designation': 'Senior Examinations Officer',
+            'department': 'Department of Examinations',
+            'employee_id': 'DOE-ISO-001',
+            'is_active': True
+        }
+    ]
+    
+    for user_data in sample_users:
+        db_service.add_user(user_data)
+    
+    print("Sample data initialized successfully!")

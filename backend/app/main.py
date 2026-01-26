@@ -23,18 +23,35 @@ app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), '..', 'upl
 app.config['CERTIFICATES_FOLDER'] = os.path.join(os.path.dirname(__file__), '..', 'certificates')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL', 
+    'postgresql://docverify:docverify123@localhost:5432/document_verification'
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 # Ensure folders exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['CERTIFICATES_FOLDER'], exist_ok=True)
 
-# Import services
-from app.services.database import db
+# Import services and initialize database
+from app.services.database import db, DatabaseService, init_sample_data, User
 from app.services.pdf_generator import CertificatePDFGenerator
-from app.models.user import User
-from app.models.certificate import Certificate
+
+# Initialize SQLAlchemy with app
+db.init_app(app)
+
+# Create database service instance
+db_service = None
 
 # Initialize PDF generator
 pdf_generator = CertificatePDFGenerator(output_dir=app.config['CERTIFICATES_FOLDER'])
+
+# Create tables and initialize data
+with app.app_context():
+    db.create_all()
+    db_service = DatabaseService(db)
+    init_sample_data(db_service)
 
 
 # ==================== AUTH HELPERS ====================
@@ -66,7 +83,7 @@ def token_required(f):
         
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            current_user = db.get_user(data['user_id'])
+            current_user = db_service.get_user(data['user_id'])
             if not current_user:
                 return jsonify({'error': 'User not found'}), 401
         except jwt.ExpiredSignatureError:
@@ -96,7 +113,8 @@ def index():
     return jsonify({
         'status': 'running',
         'service': 'Sri Lanka DOE Certificate Verification API',
-        'version': '1.0.0'
+        'version': '1.0.0',
+        'database': 'PostgreSQL'
     })
 
 
@@ -126,18 +144,20 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Username and password required'}), 400
     
-    user = db.get_user_by_username(username)
+    user = db_service.get_user_by_username(username)
     if not user:
         return jsonify({'error': 'Invalid credentials'}), 401
     
-    if not User.verify_password(password, user.get('password_hash', '')):
+    # Verify password using static method
+    password_hash = User.hash_password(password)
+    if password_hash != user.get('password_hash', ''):
         return jsonify({'error': 'Invalid credentials'}), 401
     
     if not user.get('is_active', False):
         return jsonify({'error': 'Account is disabled'}), 401
     
     # Update last login
-    db.update_user(user['user_id'], {'last_login': datetime.now().isoformat()})
+    db_service.update_last_login(user['user_id'])
     
     # Generate token
     token = generate_token(user)
@@ -166,7 +186,7 @@ def get_current_user(current_user):
 @token_required
 def get_students(current_user):
     """Get all students"""
-    students = db.get_all_students()
+    students = db_service.get_all_students()
     return jsonify({'students': students, 'count': len(students)})
 
 
@@ -178,7 +198,7 @@ def search_students(current_user):
     if len(query) < 2:
         return jsonify({'error': 'Search query too short'}), 400
     
-    students = db.search_students(query)
+    students = db_service.search_students(query)
     return jsonify({'students': students, 'count': len(students)})
 
 
@@ -186,15 +206,15 @@ def search_students(current_user):
 @token_required
 def get_student(current_user, index_number):
     """Get student by index number"""
-    student = db.get_student(index_number)
+    student = db_service.get_student(index_number)
     if not student:
         return jsonify({'error': 'Student not found'}), 404
     
     # Get student's results
-    results = db.get_results_by_index(index_number)
+    results = db_service.get_results_by_index(index_number)
     
     # Get student's certificates
-    certificates = db.get_certificates_by_index(index_number)
+    certificates = db_service.get_certificates_by_index(index_number)
     
     return jsonify({
         'student': student,
@@ -213,7 +233,7 @@ def get_results(current_user):
     exam_type = request.args.get('type')
     status = request.args.get('status')
     
-    results = db.get_all_results()
+    results = db_service.get_all_results()
     
     if exam_year:
         results = [r for r in results if r.get('exam_year') == exam_year]
@@ -230,16 +250,10 @@ def get_results(current_user):
 @issuer_required
 def get_pending_results(current_user):
     """Get results pending certification"""
-    results = db.get_pending_results()
+    results = db_service.get_pending_results()
     
-    # Enrich with student data
-    enriched_results = []
-    for result in results:
-        student = db.get_student(result.get('index_number'))
-        enriched_results.append({
-            **result,
-            'student': student
-        })
+    # Results already include student data from the service
+    enriched_results = results
     
     return jsonify({'results': enriched_results, 'count': len(enriched_results)})
 
@@ -248,11 +262,11 @@ def get_pending_results(current_user):
 @token_required
 def get_result(current_user, result_id):
     """Get result by ID"""
-    result = db.get_result(result_id)
+    result = db_service.get_result(result_id)
     if not result:
         return jsonify({'error': 'Result not found'}), 404
     
-    student = db.get_student(result.get('index_number'))
+    student = result.get('student')
     
     return jsonify({
         'result': result,
@@ -266,7 +280,7 @@ def get_result(current_user, result_id):
 @token_required
 def get_certificates(current_user):
     """Get all certificates"""
-    certificates = db.get_all_certificates()
+    certificates = db_service.get_all_certificates()
     return jsonify({'certificates': certificates, 'count': len(certificates)})
 
 
@@ -274,17 +288,13 @@ def get_certificates(current_user):
 @token_required
 def get_certificate(current_user, certificate_id):
     """Get certificate by ID"""
-    certificate = db.get_certificate(certificate_id)
+    certificate = db_service.get_certificate(certificate_id)
     if not certificate:
         return jsonify({'error': 'Certificate not found'}), 404
     
-    result = db.get_result(certificate.get('result_id'))
-    student = db.get_student(certificate.get('index_number'))
-    
+    # Certificate already includes result with student from service
     return jsonify({
-        'certificate': certificate,
-        'result': result,
-        'student': student
+        'certificate': certificate
     })
 
 
@@ -293,6 +303,8 @@ def get_certificate(current_user, certificate_id):
 @issuer_required
 def issue_certificate(current_user):
     """Issue a new certificate for a result"""
+    from app.services.database import Certificate as CertModel
+    
     data = request.get_json()
     
     if not data:
@@ -303,65 +315,72 @@ def issue_certificate(current_user):
         return jsonify({'error': 'Result ID required'}), 400
     
     # Get result
-    result = db.get_result(result_id)
+    result = db_service.get_result(result_id)
     if not result:
         return jsonify({'error': 'Result not found'}), 404
     
     if result.get('status') == 'issued':
         return jsonify({'error': 'Certificate already issued for this result'}), 400
     
-    # Get student
-    student = db.get_student(result.get('index_number'))
+    # Get student from result (included by service)
+    student = result.get('student')
+    if not student:
+        student = db_service.get_student(result.get('index_number'))
     if not student:
         return jsonify({'error': 'Student not found'}), 404
     
-    # Create certificate record
+    # Create certificate data
     certificate_id = f"CERT-{result.get('exam_type')}-{result.get('exam_year')}-{str(uuid.uuid4())[:8].upper()}"
-    
-    cert = Certificate(
-        certificate_id=certificate_id,
-        result_id=result_id,
-        index_number=result.get('index_number'),
-        exam_type=result.get('exam_type'),
-        exam_year=result.get('exam_year'),
-        issued_by=current_user.get('user_id'),
-        issuer_designation=current_user.get('designation'),
-        status='pending'
+    verification_code = CertModel.generate_verification_code(
+        result.get('exam_type'),
+        result.get('exam_year')
     )
     
+    cert_data = {
+        'certificate_id': certificate_id,
+        'result_id': result_id,
+        'index_number': result.get('index_number'),
+        'exam_type': result.get('exam_type'),
+        'exam_year': result.get('exam_year'),
+        'verification_code': verification_code,
+        'issued_by': current_user.get('user_id'),
+        'status': 'pending'
+    }
+    
     # Generate document hash
-    cert.generate_document_hash(student, result)
+    cert_data['document_hash'] = CertModel.generate_document_hash({
+        'student': student,
+        'result': result,
+        'certificate_id': certificate_id
+    })
     
     # Generate PDF
     try:
         pdf_bytes, doc_hash, filepath = pdf_generator.generate_certificate(
             student_data=student,
             result_data=result,
-            certificate_data=cert.to_dict()
+            certificate_data=cert_data
         )
         
-        cert.document_hash = doc_hash
-        cert.pdf_path = filepath
-        cert.status = 'issued'
+        cert_data['document_hash'] = doc_hash
+        cert_data['pdf_path'] = filepath
+        cert_data['status'] = 'active'
         
     except Exception as e:
         return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
     
     # Save certificate
-    cert_data = cert.to_dict()
-    db.add_certificate(cert_data)
+    saved_cert = db_service.add_certificate(cert_data)
     
     # Update result status
-    db.update_result(result_id, {
-        'status': 'issued',
-        'certified_at': datetime.now().isoformat(),
-        'certified_by': current_user.get('user_id')
+    db_service.update_result(result_id, {
+        'status': 'issued'
     })
     
     return jsonify({
         'message': 'Certificate issued successfully',
-        'certificate': cert_data,
-        'verification_code': cert.get_verification_code()
+        'certificate': saved_cert,
+        'verification_code': verification_code
     }), 201
 
 
@@ -369,7 +388,7 @@ def issue_certificate(current_user):
 @token_required
 def download_certificate(current_user, certificate_id):
     """Download certificate PDF"""
-    certificate = db.get_certificate(certificate_id)
+    certificate = db_service.get_certificate(certificate_id)
     if not certificate:
         return jsonify({'error': 'Certificate not found'}), 404
     
@@ -389,7 +408,7 @@ def download_certificate(current_user, certificate_id):
 @token_required
 def preview_certificate(current_user, certificate_id):
     """Preview certificate PDF (inline)"""
-    certificate = db.get_certificate(certificate_id)
+    certificate = db_service.get_certificate(certificate_id)
     if not certificate:
         return jsonify({'error': 'Certificate not found'}), 404
     
@@ -422,17 +441,12 @@ def verify_certificate():
     certificate = None
     
     if document_hash:
-        certificate = db.get_certificate_by_hash(document_hash)
+        certificate = db_service.get_certificate_by_hash(document_hash)
     elif certificate_id:
-        certificate = db.get_certificate(certificate_id)
+        certificate = db_service.get_certificate(certificate_id)
     elif verification_code:
-        # Parse verification code to find certificate
-        # Format: DOE-{EXAM_TYPE}-{YEAR}-{INDEX}-{HASH_PREFIX}
-        certificates = db.get_all_certificates()
-        for cert in certificates:
-            if cert.get('document_hash', '')[:8].upper() in verification_code.upper():
-                certificate = cert
-                break
+        # Search by verification code
+        certificate = db_service.get_certificate_by_verification_code(verification_code)
     
     if not certificate:
         return jsonify({
@@ -450,9 +464,9 @@ def verify_certificate():
             'reason': certificate.get('revocation_reason')
         })
     
-    # Get associated data
-    result = db.get_result(certificate.get('result_id'))
-    student = db.get_student(certificate.get('index_number'))
+    # Get associated data (included in certificate from service)
+    result = certificate.get('result', {})
+    student = result.get('student', {})
     
     # Return verification success (limited public info)
     return jsonify({
@@ -485,26 +499,8 @@ def verify_certificate():
 @token_required
 def get_dashboard_stats(current_user):
     """Get dashboard statistics"""
-    results = db.get_all_results()
-    certificates = db.get_all_certificates()
-    students = db.get_all_students()
-    
-    pending_count = len([r for r in results if r.get('status') == 'pending'])
-    issued_count = len([c for c in certificates if c.get('status') == 'issued'])
-    
-    ol_results = len([r for r in results if r.get('exam_type') == 'OL'])
-    al_results = len([r for r in results if r.get('exam_type') == 'AL'])
-    
-    return jsonify({
-        'stats': {
-            'total_students': len(students),
-            'total_results': len(results),
-            'pending_certification': pending_count,
-            'certificates_issued': issued_count,
-            'ol_results': ol_results,
-            'al_results': al_results
-        }
-    })
+    stats = db_service.get_stats()
+    return jsonify({'stats': stats})
 
 
 if __name__ == '__main__':
