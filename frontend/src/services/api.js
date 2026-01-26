@@ -99,7 +99,8 @@ export const getCertificateDownloadUrl = (certificateId) => {
 };
 
 export const getCertificatePreviewUrl = (certificateId) => {
-  return `${API_URL}/api/certificates/${certificateId}/preview`;
+  const token = localStorage.getItem('token');
+  return `${API_URL}/api/certificates/${certificateId}/preview?token=${token}`;
 };
 
 // Public verification

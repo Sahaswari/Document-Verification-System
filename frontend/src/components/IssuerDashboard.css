@@ -346,16 +346,42 @@
   cursor: not-allowed;
 }
 
+/* Action buttons container */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.view-btn {
+  background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.view-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(159, 122, 234, 0.4);
+}
+
 .download-btn {
   background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .download-btn:hover {

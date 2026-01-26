@@ -339,16 +339,7 @@ class CertificatePDFGenerator:
         c.drawCentredString(width - 65, 25, "Scan to Verify")
     
     def _draw_security_features(self, c, width, height, certificate_data):
-        """Draw security watermarks and features"""
-        # Watermark
-        c.saveState()
-        c.setFillColor(colors.HexColor('#e2e8f0'))
-        c.setFont('Helvetica-Bold', 60)
-        c.translate(width/2, height/2)
-        c.rotate(45)
-        c.drawCentredString(0, 0, "OFFICIAL")
-        c.restoreState()
-        
+        """Draw security features (borders and hash)"""
         # Document hash (bottom)
         c.setFont('Helvetica', 6)
         c.setFillColor(colors.HexColor('#a0aec0'))
