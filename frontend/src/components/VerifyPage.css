@@ -438,3 +438,307 @@
 .footer-links span {
   opacity: 0.5;
 }
+
+/* ==================== Method Tabs Section ==================== */
+.method-tabs-section {
+  margin-bottom: 32px;
+}
+
+.method-tabs-section h2 {
+  color: #2d3748;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.method-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .method-tabs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.method-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.method-tab:hover {
+  border-color: #800000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.1);
+}
+
+.method-tab.active {
+  border-color: #800000;
+  background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.15);
+}
+
+.tab-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.tab-label {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.tab-desc {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.method-tab.active .tab-label {
+  color: #800000;
+}
+
+/* ==================== File Upload Area ==================== */
+.file-upload-area {
+  border: 2px dashed #cbd5e0;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #f7fafc;
+  margin-bottom: 20px;
+}
+
+.file-upload-area:hover {
+  border-color: #800000;
+  background: #fff5f5;
+}
+
+.file-upload-area.has-file {
+  border-color: #48bb78;
+  background: #f0fff4;
+  border-style: solid;
+}
+
+.upload-prompt {
+  color: #718096;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.upload-prompt p {
+  margin: 4px 0;
+}
+
+.upload-hint {
+  font-size: 0.85rem;
+  color: #a0aec0;
+}
+
+.file-types {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  margin-top: 12px;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-icon {
+  font-size: 2rem;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #2d3748;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+.remove-file {
+  background: #e53e3e;
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.remove-file:hover {
+  background: #c53030;
+  transform: scale(1.1);
+}
+
+/* ==================== Blockchain Info Card ==================== */
+.blockchain-info-card {
+  background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%);
+  border-color: #81e6d9;
+}
+
+.blockchain-info-card h3 {
+  color: #234e52;
+}
+
+.file-info-card {
+  background: linear-gradient(135deg, #faf5ff 0%, #f0fff4 100%);
+  border-color: #9ae6b4;
+}
+
+.file-info-card h3 {
+  color: #553c9a;
+}
+
+.blockchain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.security-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #2d3748;
+  margin-bottom: 12px;
+}
+
+/* ==================== Blockchain Verified Result ==================== */
+.result-card.blockchain-verified {
+  border-top: 4px solid #3182ce;
+}
+
+.result-card.blockchain-verified .result-header {
+  background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+}
+
+.valid-badge.blockchain {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+}
+
+.result-card.blockchain-verified .result-header p {
+  color: #2c5282;
+}
+
+.blockchain-details {
+  padding: 24px;
+}
+
+.blockchain-details h4 {
+  color: #2d3748;
+  margin-bottom: 16px;
+}
+
+.detail-grid {
+  background: #f7fafc;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.detail-grid .detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-grid .detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-grid .label {
+  font-size: 0.8rem;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-grid .value {
+  color: #2d3748;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.detail-grid .value.hash code {
+  display: block;
+  background: white;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  color: #4a5568;
+}
+
+.value.status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.value.status.active {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.value.status.revoked {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.verification-note {
+  margin: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #276749;
+  font-weight: 500;
+}
+
+.verification-note span {
+  font-size: 1.2rem;
+}
+

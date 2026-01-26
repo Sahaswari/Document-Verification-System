@@ -103,12 +103,34 @@ export const getCertificatePreviewUrl = (certificateId) => {
   return `${API_URL}/api/certificates/${certificateId}/preview?token=${token}`;
 };
 
-// Public verification
+// Public verification - by verification code (database)
 export const verifyCertificate = async (data) => {
   const response = await fetch(`${API_URL}/api/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
+  });
+  return response.json();
+};
+
+// Public verification - by student index number (blockchain)
+export const verifyByIndexNumber = async (studentIndex) => {
+  const response = await fetch(`${API_URL}/api/certificate/verify-by-index`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ student_index: studentIndex })
+  });
+  return response.json();
+};
+
+// Public verification - by uploading certificate file (blockchain)
+export const verifyByFile = async (file) => {
+  const formData = new FormData();
+  formData.append('certificate', file);
+  
+  const response = await fetch(`${API_URL}/api/certificate/verify`, {
+    method: 'POST',
+    body: formData
   });
   return response.json();
 };
