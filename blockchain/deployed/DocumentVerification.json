@@ -1,0 +1,398 @@
+{
+  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "network": "localhost",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deploymentTime": "2026-01-26T18:20:01.175Z",
+  "abi": [
+    {
+      "type": "constructor",
+      "stateMutability": "undefined",
+      "payable": false,
+      "inputs": []
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "DocumentRegistered",
+      "inputs": [
+        {
+          "type": "string",
+          "name": "documentHash",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "issuer",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "owner",
+          "indexed": true
+        },
+        {
+          "type": "string",
+          "name": "documentType",
+          "indexed": false
+        },
+        {
+          "type": "string",
+          "name": "studentIndex",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "examYear",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "DocumentRevoked",
+      "inputs": [
+        {
+          "type": "string",
+          "name": "documentHash",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "revokedBy",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "IssuerAuthorized",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "issuer",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "authorizedBy",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "IssuerRevoked",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "issuer",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "revokedBy",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "authorizeIssuer",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_issuer"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "authorizedIssuers",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": ""
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getDocumentByIndex",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_studentIndex"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "string",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getUserDocuments",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_user"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "string[]",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isAuthorizedIssuer",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_issuer"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "address",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "registerDocument",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        },
+        {
+          "type": "string",
+          "name": "_ipfsHash"
+        },
+        {
+          "type": "address",
+          "name": "_owner"
+        },
+        {
+          "type": "string",
+          "name": "_documentType"
+        },
+        {
+          "type": "string",
+          "name": "_studentIndex"
+        },
+        {
+          "type": "uint256",
+          "name": "_examYear"
+        },
+        {
+          "type": "string",
+          "name": "_examSubject"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "revokeDocument",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "revokeIssuer",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_issuer"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "verifyByStudentIndex",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_studentIndex"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "exists"
+        },
+        {
+          "type": "bool",
+          "name": "isValid"
+        },
+        {
+          "type": "address",
+          "name": "issuer"
+        },
+        {
+          "type": "address",
+          "name": "documentOwner"
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp"
+        },
+        {
+          "type": "string",
+          "name": "documentType"
+        },
+        {
+          "type": "string",
+          "name": "ipfsHash"
+        },
+        {
+          "type": "string",
+          "name": "documentHash"
+        },
+        {
+          "type": "uint256",
+          "name": "examYear"
+        },
+        {
+          "type": "string",
+          "name": "examSubject"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "verifyDocument",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "exists"
+        },
+        {
+          "type": "bool",
+          "name": "isValid"
+        },
+        {
+          "type": "address",
+          "name": "issuer"
+        },
+        {
+          "type": "address",
+          "name": "documentOwner"
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp"
+        },
+        {
+          "type": "string",
+          "name": "documentType"
+        },
+        {
+          "type": "string",
+          "name": "ipfsHash"
+        },
+        {
+          "type": "string",
+          "name": "studentIndex"
+        },
+        {
+          "type": "uint256",
+          "name": "examYear"
+        },
+        {
+          "type": "string",
+          "name": "examSubject"
+        }
+      ]
+    }
+  ]
+}
