@@ -511,19 +511,23 @@ def preview_certificate(current_user, certificate_id):
 
 @app.route('/api/verify', methods=['POST'])
 def verify_certificate():
-    """Public endpoint to verify a certificate"""
+    """
+    Public endpoint to verify a certificate by verification code
+    Verifies in both database and blockchain for double authenticity
+    """
     data = request.get_json()
     
     if not data:
         return jsonify({'error': 'No data provided'}), 400
     
-    # Can verify by verification_code, document_hash, or certificate_id
-    verification_code = data.get('verification_code')
+    # Support multiple verification methods
+    verification_code = data.get('verification_code') or data.get('verificationCode')
     document_hash = data.get('document_hash')
     certificate_id = data.get('certificate_id')
     
     certificate = None
     
+    # Find certificate in database
     if document_hash:
         certificate = db_service.get_certificate_by_hash(document_hash)
     elif certificate_id:
@@ -534,47 +538,85 @@ def verify_certificate():
     
     if not certificate:
         return jsonify({
+            'valid': False,
             'verified': False,
             'message': 'Certificate not found in the system',
             'status': 'NOT_FOUND'
-        }), 404
+        }), 200
     
+    # Check if revoked in database
     if certificate.get('status') == 'revoked':
         return jsonify({
+            'valid': False,
             'verified': False,
             'message': 'This certificate has been revoked',
             'status': 'REVOKED',
             'revoked_at': certificate.get('revoked_at'),
             'reason': certificate.get('revocation_reason')
-        })
+        }), 200
     
     # Get associated data (included in certificate from service)
     result = certificate.get('result', {})
     student = result.get('student', {})
     
-    # Return verification success (limited public info)
+    # Verify on blockchain if available
+    blockchain_verified = False
+    blockchain_status = None
+    
+    try:
+        from app.services.blockchain_service import get_blockchain_service
+        blockchain = get_blockchain_service()
+        
+        # Get document hash from certificate
+        cert_hash = certificate.get('document_hash')
+        
+        if cert_hash:
+            # Verify on blockchain
+            blockchain_result = blockchain.verify_document(cert_hash)
+            blockchain_verified = blockchain_result.get('exists') and blockchain_result.get('is_valid')
+            blockchain_status = {
+                'verified_on_blockchain': blockchain_verified,
+                'blockchain_timestamp': blockchain_result.get('timestamp'),
+                'blockchain_issuer': blockchain_result.get('issuer')
+            }
+    except Exception as e:
+        print(f"Warning: Blockchain verification failed: {e}")
+        blockchain_status = {
+            'verified_on_blockchain': None,
+            'error': 'Blockchain verification unavailable'
+        }
+    
+    # Return comprehensive verification result
     return jsonify({
+        'valid': True,
         'verified': True,
         'message': 'Certificate is valid and authentic',
         'status': 'VALID',
         'certificate': {
             'certificate_id': certificate.get('certificate_id'),
+            'verification_code': certificate.get('verification_code'),
+            'document_hash': certificate.get('document_hash'),
             'exam_type': certificate.get('exam_type'),
             'exam_year': certificate.get('exam_year'),
             'issued_at': certificate.get('issued_at'),
-            'verification_code': certificate.get('verification_code')
-        },
-        'student': {
-            'name_with_initials': student.get('name_with_initials') if student else None,
-            'index_number': certificate.get('index_number'),
-            'school_name': student.get('school_name') if student else None
-        },
-        'result': {
-            'exam_type': result.get('exam_type') if result else None,
-            'exam_year': result.get('exam_year') if result else None,
-            'subjects_count': len(result.get('subjects', [])) if result else 0
+            'result': {
+                'index_number': result.get('index_number') if result else None,
+                'exam_type': result.get('exam_type') if result else None,
+                'exam_year': result.get('exam_year') if result else None,
+                'subjects': result.get('subjects', []) if result else []
+            },
+            'student': {
+                'full_name': student.get('full_name') if student else None,
+                'full_name_sinhala': student.get('full_name_sinhala') if student else None,
+                'full_name_tamil': student.get('full_name_tamil') if student else None,
+                'name_with_initials': student.get('name_with_initials') if student else None,
+                'date_of_birth': student.get('date_of_birth').strftime('%Y-%m-%d') if student and student.get('date_of_birth') else None,
+                'school_name': student.get('school_name') if student else None,
+                'district': student.get('district') if student else None
+            },
+            'blockchain': blockchain_status
         }
-    })
+    }), 200
 
 
 # ==================== STATS ROUTES ====================
