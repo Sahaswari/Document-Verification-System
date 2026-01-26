@@ -1,0 +1,2 @@
+# This file keeps the certificates directory in git
+# The directory is needed but generated certificates should not be tracked
