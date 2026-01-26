@@ -1,19 +1,68 @@
 # Document Verification System
 
-A blockchain-based document verification system with AI-powered forgery detection and OCR capabilities. This system uses smart contracts to ensure document authenticity and provides comprehensive analysis using machine learning techniques.
+A blockchain-based document verification system for **Sri Lankan O/L and A/L certificates** with AI-powered forgery detection and OCR capabilities. This system uses smart contracts to ensure document authenticity and provides comprehensive analysis using machine learning techniques.
+
+---
+
+## 🚀 Quick Start for Developers
+
+### For Blockchain Developer
+**Start here:** Read [`QUICK_START.md`](QUICK_START.md) for complete setup instructions!
+
+**Key files for you:**
+- `blockchain/contracts/DocumentVerification.sol` - Your smart contract
+- `backend/app/services/blockchain_service.py` - Python integration
+- `BLOCKCHAIN_GUIDE.md` - Complete learning guide
+- `IMPLEMENTATION_SUMMARY.md` - Overview of what's been created
+
+### For Frontend/Document Extraction Developer
+The blockchain developer has created REST API endpoints at `/api/certificate/` that you can use:
+- POST `/api/certificate/register` - Register a certificate
+- POST `/api/certificate/verify` - Verify a certificate
+- See `backend/app/api/certificate_routes.py` for full API documentation
+
+---
+
+## 📚 Documentation Index
+
+| Document | Purpose | Who Should Read |
+|----------|---------|-----------------|
+| [`QUICK_START.md`](QUICK_START.md) | Fast setup & daily workflow | **Blockchain developer** (Start here!) |
+| [`BLOCKCHAIN_GUIDE.md`](BLOCKCHAIN_GUIDE.md) | Complete blockchain concepts | **Blockchain developer** |
+| [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) | What has been created | Everyone |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Visual system diagrams | Everyone |
+| [`FILE_INDEX.md`](FILE_INDEX.md) | Complete file reference | Everyone |
+
+---
 
 ### Run the Application
 
 ```bash
-# Clone the repository
-git clone <repo-url>
-cd "Document Verification System"
+# For Development (Recommended for first time)
+# Terminal 1: Start blockchain
+cd blockchain
+npm install
+npm run node
 
-# Start all services (blockchain + backend + frontend)
+# Terminal 2: Deploy contracts
+cd blockchain
+npm run deploy
+
+# Terminal 3: Start backend
+cd backend
+pip install -r requirements.txt
+python app/main.py
+
+# Terminal 4: Start frontend
+cd frontend
+npm install
+npm start
+```
+
+**OR using Docker (Full stack):**
+```bash
+# Start all services
 docker-compose up --build
-
-# Or run in background (detached mode)
-docker-compose up -d
 ```
 
 **Access the application:**
@@ -35,16 +84,35 @@ docker-compose down -v
 
 ## 📋 Architecture & Components
 
-### Blockchain Layer
+### Blockchain Layer ⛓️
 - **Platform**: Ethereum with Hardhat development environment
-- **Smart Contract Features**:
+- **Smart Contract**: `DocumentVerification.sol` (Solidity)
+- **Features**:
+  - O/L and A/L certificate registration
   - Document hash storage (SHA-256)
-  - Timestamp and uploader address tracking
-  - Document metadata management
-  - Functions: `registerDocument()`, `verifyDocument()`, `getDocumentHistory()`
+  - Student index tracking
+  - Exam year and subject/stream recording
+  - Certificate revocation
+  - Authorized issuer management
+- **Functions**:
+  - `registerDocument()` - Register new certificate
+  - `verifyDocument()` - Verify by hash
+  - `verifyByStudentIndex()` - Verify by student index
+  - `revokeDocument()` - Invalidate certificate
+  - `getUserDocuments()` - Get all user certificates
 - **Privacy**: Only hashes stored on-chain (not full documents)
 
-### AI/ML Layer
+### Backend Layer 🐍
+- **Language**: Python with Flask
+- **Blockchain Integration**: Web3.py
+- **Services**:
+  - Certificate registration API
+  - Certificate verification API
+  - Document hash calculation
+  - Blockchain interaction management
+- **API Endpoints**: See `backend/app/api/certificate_routes.py`
+
+### AI/ML Layer 🤖
 
 **OCR Component:**
 - Tesseract OCR for text extraction from uploaded documents
