@@ -1,0 +1,154 @@
+[
+  {
+    "result_id": "RES-2024-OL-001",
+    "index_number": "2024-OL-123456",
+    "exam_type": "OL",
+    "exam_year": 2024,
+    "subjects": [
+      {
+        "subject_code": "01",
+        "subject_name": "Buddhism",
+        "grade": "A"
+      },
+      {
+        "subject_code": "02",
+        "subject_name": "Sinhala Language & Literature",
+        "grade": "A"
+      },
+      {
+        "subject_code": "03",
+        "subject_name": "English",
+        "grade": "B"
+      },
+      {
+        "subject_code": "04",
+        "subject_name": "History",
+        "grade": "A"
+      },
+      {
+        "subject_code": "05",
+        "subject_name": "Mathematics",
+        "grade": "A"
+      },
+      {
+        "subject_code": "06",
+        "subject_name": "Science",
+        "grade": "A"
+      },
+      {
+        "subject_code": "07",
+        "subject_name": "Geography",
+        "grade": "B"
+      },
+      {
+        "subject_code": "08",
+        "subject_name": "Civics",
+        "grade": "A"
+      },
+      {
+        "subject_code": "09",
+        "subject_name": "Information & Communication Technology",
+        "grade": "A"
+      }
+    ],
+    "status": "issued",
+    "attempt_number": 1,
+    "is_private_candidate": false,
+    "created_at": "2026-01-26T16:10:24.070081",
+    "certified_at": "2026-01-26T16:13:31.490875",
+    "certified_by": "USR-001"
+  },
+  {
+    "result_id": "RES-2024-OL-002",
+    "index_number": "2024-OL-123457",
+    "exam_type": "OL",
+    "exam_year": 2024,
+    "subjects": [
+      {
+        "subject_code": "01",
+        "subject_name": "Buddhism",
+        "grade": "B"
+      },
+      {
+        "subject_code": "02",
+        "subject_name": "Sinhala Language & Literature",
+        "grade": "B"
+      },
+      {
+        "subject_code": "03",
+        "subject_name": "English",
+        "grade": "C"
+      },
+      {
+        "subject_code": "04",
+        "subject_name": "History",
+        "grade": "B"
+      },
+      {
+        "subject_code": "05",
+        "subject_name": "Mathematics",
+        "grade": "A"
+      },
+      {
+        "subject_code": "06",
+        "subject_name": "Science",
+        "grade": "B"
+      },
+      {
+        "subject_code": "07",
+        "subject_name": "Commerce",
+        "grade": "A"
+      },
+      {
+        "subject_code": "08",
+        "subject_name": "Accounting",
+        "grade": "A"
+      },
+      {
+        "subject_code": "09",
+        "subject_name": "Information & Communication Technology",
+        "grade": "B"
+      }
+    ],
+    "status": "pending",
+    "attempt_number": 1,
+    "is_private_candidate": false,
+    "created_at": "2026-01-26T16:10:24.113807"
+  },
+  {
+    "result_id": "RES-2023-AL-001",
+    "index_number": "2023-AL-789012",
+    "exam_type": "AL",
+    "exam_year": 2023,
+    "stream": "Biological Science",
+    "subjects": [
+      {
+        "subject_code": "01",
+        "subject_name": "Biology",
+        "grade": "A"
+      },
+      {
+        "subject_code": "02",
+        "subject_name": "Chemistry",
+        "grade": "A"
+      },
+      {
+        "subject_code": "03",
+        "subject_name": "Physics",
+        "grade": "B"
+      },
+      {
+        "subject_code": "04",
+        "subject_name": "General English",
+        "grade": "B"
+      }
+    ],
+    "status": "pending",
+    "attempt_number": 1,
+    "is_private_candidate": false,
+    "z_score": 1.8234,
+    "district_rank": 45,
+    "island_rank": 234,
+    "created_at": "2026-01-26T16:10:24.153586"
+  }
+]

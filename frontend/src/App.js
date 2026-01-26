@@ -1,84 +1,101 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './components/Login';
+import IssuerDashboard from './components/IssuerDashboard';
+import VerifyPage from './components/VerifyPage';
 import './App.css';
 
-function App() {
-  const [file, setFile] = useState(null);
-  const [status, setStatus] = useState('');
-  const [backendStatus, setBackendStatus] = useState('Checking...');
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
 
-  // Check backend health on load
-  React.useEffect(() => {
-    fetch('http://localhost:5000/api/health')
-      .then(res => res.json())
-      .then(data => setBackendStatus(data.status))
-      .catch(() => setBackendStatus('Not connected'));
-  }, []);
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setStatus('');
-  };
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-  const handleUpload = async () => {
-    if (!file) {
-      setStatus('Please select a file first');
-      return;
-    }
+  return children;
+};
 
-    const formData = new FormData();
-    formData.append('file', file);
+// Redirect if already logged in
+const PublicOnlyRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
 
-    try {
-      const response = await fetch('http://localhost:5000/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      setStatus(data.message || data.error);
-    } catch (error) {
-      setStatus('Error uploading file: ' + error.message);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
+  if (isAuthenticated) {
+    return <Navigate to="/issuer" replace />;
+  }
+
+  return children;
+};
+
+function AppRoutes() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>📄 Document Verification System</h1>
-        <p className="subtitle">Blockchain-based Document Authenticity Verification</p>
-      </header>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<VerifyPage />} />
+      <Route path="/verify" element={<VerifyPage />} />
+      
+      {/* Auth Routes */}
+      <Route 
+        path="/login" 
+        element={
+          <PublicOnlyRoute>
+            <Login />
+          </PublicOnlyRoute>
+        } 
+      />
+      
+      {/* Protected Issuer Routes */}
+      <Route 
+        path="/issuer" 
+        element={
+          <ProtectedRoute>
+            <IssuerDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/issuer/*" 
+        element={
+          <ProtectedRoute>
+            <IssuerDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* 404 Redirect */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
-      <main className="App-main">
-        <div className="status-card">
-          <h3>System Status</h3>
-          <p>Backend: <span className={backendStatus === 'healthy' ? 'status-ok' : 'status-error'}>{backendStatus}</span></p>
-          <p>Blockchain: <span className="status-ok">Running (Hardhat)</span></p>
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <div className="App">
+          <AppRoutes />
         </div>
-
-        <div className="upload-card">
-          <h2>Upload Document</h2>
-          <p>Upload a document to verify its authenticity or register it on the blockchain.</p>
-          
-          <div className="upload-area">
-            <input 
-              type="file" 
-              onChange={handleFileChange}
-              accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-            />
-            {file && <p className="file-name">Selected: {file.name}</p>}
-          </div>
-
-          <button onClick={handleUpload} className="upload-btn">
-            Upload & Verify
-          </button>
-
-          {status && <p className="status-message">{status}</p>}
-        </div>
-      </main>
-
-      <footer className="App-footer">
-        <p>Document Verification System v1.0.0 | Powered by Ethereum & AI</p>
-      </footer>
-    </div>
+      </AuthProvider>
+    </Router>
   );
 }
 
