@@ -41,6 +41,17 @@ from app.services.pdf_generator import CertificatePDFGenerator
 # Initialize SQLAlchemy with app
 db.init_app(app)
 
+# Register blockchain certificate routes
+try:
+    from app.api.certificate_routes import certificate_bp
+    app.register_blueprint(certificate_bp)
+    print("Blockchain certificate routes registered successfully")
+except ImportError as e:
+    print(f"Warning: Could not load blockchain certificate routes: {e}")
+    print("   Make sure blockchain is running and contracts are deployed")
+except Exception as e:
+    print(f"Warning: Error registering blockchain routes: {e}")
+
 # Create database service instance
 db_service = None
 

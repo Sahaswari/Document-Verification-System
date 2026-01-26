@@ -79,15 +79,31 @@ docker-compose up --build
 ### Run the Application
 
 ```bash
-# Clone the repository
-git clone <repo-url>
-cd "Document Verification System"
+# For Development (Recommended for first time)
+# Terminal 1: Start blockchain
+cd blockchain
+npm install
+npm run node
 
-# Start all services (blockchain + backend + frontend)
+# Terminal 2: Deploy contracts
+cd blockchain
+npm run deploy
+
+# Terminal 3: Start backend
+cd backend
+pip install -r requirements.txt
+python app/main.py
+
+# Terminal 4: Start frontend
+cd frontend
+npm install
+npm start
+```
+
+**OR using Docker (Full stack):**
+```bash
+# Start all services
 docker-compose up --build
-
-# Or run in background (detached mode)
-docker-compose up -d
 ```
 
 ### Stop the Application
@@ -104,16 +120,35 @@ docker-compose down -v
 
 ## 📋 Architecture & Components
 
-### Blockchain Layer
+### Blockchain Layer ⛓️
 - **Platform**: Ethereum with Hardhat development environment
-- **Smart Contract Features**:
+- **Smart Contract**: `DocumentVerification.sol` (Solidity)
+- **Features**:
+  - O/L and A/L certificate registration
   - Document hash storage (SHA-256)
-  - Timestamp and uploader address tracking
-  - Document metadata management
-  - Functions: `registerDocument()`, `verifyDocument()`, `getDocumentHistory()`
+  - Student index tracking
+  - Exam year and subject/stream recording
+  - Certificate revocation
+  - Authorized issuer management
+- **Functions**:
+  - `registerDocument()` - Register new certificate
+  - `verifyDocument()` - Verify by hash
+  - `verifyByStudentIndex()` - Verify by student index
+  - `revokeDocument()` - Invalidate certificate
+  - `getUserDocuments()` - Get all user certificates
 - **Privacy**: Only hashes stored on-chain (not full documents)
 
-### AI/ML Layer
+### Backend Layer 🐍
+- **Language**: Python with Flask
+- **Blockchain Integration**: Web3.py
+- **Services**:
+  - Certificate registration API
+  - Certificate verification API
+  - Document hash calculation
+  - Blockchain interaction management
+- **API Endpoints**: See `backend/app/api/certificate_routes.py`
+
+### AI/ML Layer 🤖
 
 **OCR Component:**
 - Tesseract OCR for text extraction from uploaded documents
