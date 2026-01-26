@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 Test script for certificate verification methods
-Tests Method 3 (Student Index) and Method 4 (File Upload)
+Tests ALL THREE methods:
+- Method 1: Verification Code (Database + Blockchain)
+- Method 2: Student Index (Blockchain)
+- Method 3: File Upload (Hash + Blockchain)
 """
 
 import requests
@@ -25,11 +28,62 @@ def print_result(success, message):
     icon = "✅" if success else "❌"
     print(f"{icon} {message}")
 
+def test_verify_by_code(verification_code):
+    """
+    Test Method 1: Verify certificate by verification code
+    """
+    print_header("METHOD 1: Verify by Verification Code")
+    print(f"Verification Code: {verification_code}")
+    
+    try:
+        # Make API request
+        response = requests.post(
+            f"{API_BASE_URL}/api/verify",
+            json={"verification_code": verification_code},
+            headers={"Content-Type": "application/json"}
+        )
+        
+        print(f"\nStatus Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"\nResponse:")
+            print(json.dumps(data, indent=2))
+            
+            if data.get('valid') or data.get('verified'):
+                print_result(True, "Certificate verified successfully!")
+                print(f"\n📋 Certificate Details:")
+                cert = data.get('certificate', {})
+                student = cert.get('student', {})
+                result = cert.get('result', {})
+                blockchain = cert.get('blockchain', {})
+                
+                print(f"  • Certificate ID: {cert.get('certificate_id', 'N/A')}")
+                print(f"  • Verification Code: {cert.get('verification_code', 'N/A')}")
+                print(f"  • Student Name: {student.get('full_name', 'N/A')}")
+                print(f"  • School: {student.get('school_name', 'N/A')}")
+                print(f"  • Index Number: {result.get('index_number', 'N/A')}")
+                print(f"  • Exam Type: {cert.get('exam_type', 'N/A')}")
+                print(f"  • Exam Year: {cert.get('exam_year', 'N/A')}")
+                print(f"  • Subjects: {len(result.get('subjects', []))} subjects")
+                print(f"  • Blockchain Verified: {blockchain.get('verified_on_blockchain', 'N/A')}")
+                return True
+            else:
+                print_result(False, data.get('message', 'Certificate not found'))
+                return False
+        else:
+            print_result(False, f"API Error: {response.text}")
+            return False
+            
+    except Exception as e:
+        print_result(False, f"Exception: {str(e)}")
+        return False
+
 def test_verify_by_student_index(student_index):
     """
-    Test Method 3: Verify certificate by student index
+    Test Method 2: Verify certificate by student index
     """
-    print_header("METHOD 3: Verify by Student Index")
+    print_header("METHOD 2: Verify by Student Index")
     print(f"Student Index: {student_index}")
     
     try:
