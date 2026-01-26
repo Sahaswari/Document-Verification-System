@@ -47,6 +47,134 @@
   margin: 0 auto;
 }
 
+/* Method Selection */
+.method-selection {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.method-selection h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+.method-tabs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.method-tabs button {
+  padding: 12px 24px;
+  border: 2px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.method-tabs button:hover {
+  border-color: #800000;
+  color: #800000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.1);
+}
+
+.method-tabs button.active {
+  background: linear-gradient(135deg, #800000 0%, #a52a2a 100%);
+  border-color: #800000;
+  color: white;
+  box-shadow: 0 4px 16px rgba(128, 0, 0, 0.2);
+}
+
+.method-tabs button.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(128, 0, 0, 0.3);
+}
+
+/* File Input */
+.input-group input[type="file"] {
+  padding: 10px;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.input-group input[type="file"]:hover {
+  border-color: #800000;
+  background: #fff;
+}
+
+.file-info {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #e8f5e9;
+  border-radius: 6px;
+  color: #2e7d32;
+  font-size: 0.9rem;
+}
+
+/* Blockchain Badge */
+.blockchain-badge {
+  margin-top: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+}
+
+.blockchain-badge span {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.blockchain-badge strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.blockchain-badge p {
+  font-size: 0.9rem;
+  opacity: 0.95;
+  margin: 0;
+}
+
+/* Verify Button */
+.verify-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #800000 0%, #a52a2a 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.verify-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(128, 0, 0, 0.3);
+}
+
+.verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Form Section */
 .verify-form-section {
   display: grid;
