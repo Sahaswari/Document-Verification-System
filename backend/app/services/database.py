@@ -418,140 +418,84 @@ class DatabaseService:
 
 # ==================== SAMPLE DATA INITIALIZATION ====================
 
-def init_sample_data(db_service: DatabaseService):
-    """Initialize database with sample data if empty"""
+def init_sample_data(db_service: DatabaseService, student_count: int = 100):
+    """
+    Initialize database with sample data if empty.
+    Automatically generates 100 students, 100 results, and sample certificates for testing.
+    
+    Args:
+        db_service: DatabaseService instance
+        student_count: Number of students to generate (default 100)
+    """
     
     # Check if data already exists
     if Student.query.first() is not None:
+        print("Database already contains data. Skipping seed data initialization.")
         return
     
-    print("Initializing sample data...")
+    print(f"=" * 60)
+    print("DATABASE SEED: Initializing test data...")
+    print(f"Generating {student_count} students, results, and certificates...")
+    print(f"=" * 60)
     
-    # Sample Students
-    sample_students = [
-        {
-            'index_number': '2024-OL-123456',
-            'full_name': 'Kamal Perera',
-            'full_name_sinhala': 'කමල් පෙරේරා',
-            'full_name_tamil': 'கமல் பெரேரா',
-            'name_with_initials': 'K. Perera',
-            'nic_number': '200512345678',
-            'date_of_birth': '2005-03-15',
-            'gender': 'Male',
-            'school_name': 'Royal College, Colombo',
-            'school_code': 'RC001',
-            'district': 'Colombo',
-            'province': 'Western',
-            'medium': 'Sinhala'
-        },
-        {
-            'index_number': '2024-OL-123457',
-            'full_name': 'Nimal Silva',
-            'full_name_sinhala': 'නිමල් සිල්වා',
-            'full_name_tamil': 'நிமல் சில்வா',
-            'name_with_initials': 'N. Silva',
-            'nic_number': '200534567890',
-            'date_of_birth': '2005-07-22',
-            'gender': 'Male',
-            'school_name': 'Ananda College, Colombo',
-            'school_code': 'AC001',
-            'district': 'Colombo',
-            'province': 'Western',
-            'medium': 'Sinhala'
-        },
-        {
-            'index_number': '2023-AL-789012',
-            'full_name': 'Sanduni Fernando',
-            'full_name_sinhala': 'සඳුනි ප්‍රනාන්දු',
-            'full_name_tamil': 'சந்துனி பெர்னான்டோ',
-            'name_with_initials': 'S. Fernando',
-            'nic_number': '200312345123',
-            'date_of_birth': '2003-11-08',
-            'gender': 'Female',
-            'school_name': 'Visakha Vidyalaya, Colombo',
-            'school_code': 'VV001',
-            'district': 'Colombo',
-            'province': 'Western',
-            'medium': 'Sinhala'
-        }
-    ]
+    # Import seed data generator
+    from app.services.seed_data import get_seed_data
     
-    students_map = {}
-    for student_data in sample_students:
-        student = db_service.add_student(student_data)
-        students_map[student['index_number']] = student
+    # Generate seed data
+    seed_data = get_seed_data(student_count=student_count)
     
-    # Sample Results
-    sample_results = [
-        {
-            'result_id': 'RES-2024-OL-001',
-            'index_number': '2024-OL-123456',
-            'exam_type': 'OL',
-            'exam_year': 2024,
-            'subjects': [
-                {'subject_code': '01', 'subject_name': 'Buddhism', 'grade': 'A'},
-                {'subject_code': '02', 'subject_name': 'Sinhala Language & Literature', 'grade': 'A'},
-                {'subject_code': '03', 'subject_name': 'English', 'grade': 'B'},
-                {'subject_code': '04', 'subject_name': 'History', 'grade': 'A'},
-                {'subject_code': '05', 'subject_name': 'Mathematics', 'grade': 'A'},
-                {'subject_code': '06', 'subject_name': 'Science', 'grade': 'A'},
-                {'subject_code': '07', 'subject_name': 'Geography', 'grade': 'B'},
-                {'subject_code': '08', 'subject_name': 'Civics', 'grade': 'A'},
-                {'subject_code': '09', 'subject_name': 'Information & Communication Technology', 'grade': 'A'}
-            ],
-            'status': 'pending',
-            'attempt_number': 1,
-            'is_private_candidate': False
-        },
-        {
-            'result_id': 'RES-2024-OL-002',
-            'index_number': '2024-OL-123457',
-            'exam_type': 'OL',
-            'exam_year': 2024,
-            'subjects': [
-                {'subject_code': '01', 'subject_name': 'Buddhism', 'grade': 'B'},
-                {'subject_code': '02', 'subject_name': 'Sinhala Language & Literature', 'grade': 'B'},
-                {'subject_code': '03', 'subject_name': 'English', 'grade': 'C'},
-                {'subject_code': '04', 'subject_name': 'History', 'grade': 'B'},
-                {'subject_code': '05', 'subject_name': 'Mathematics', 'grade': 'A'},
-                {'subject_code': '06', 'subject_name': 'Science', 'grade': 'B'},
-                {'subject_code': '07', 'subject_name': 'Commerce', 'grade': 'A'},
-                {'subject_code': '08', 'subject_name': 'Accounting', 'grade': 'A'},
-                {'subject_code': '09', 'subject_name': 'Information & Communication Technology', 'grade': 'B'}
-            ],
-            'status': 'pending',
-            'attempt_number': 1,
-            'is_private_candidate': False
-        },
-        {
-            'result_id': 'RES-2023-AL-001',
-            'index_number': '2023-AL-789012',
-            'exam_type': 'AL',
-            'exam_year': 2023,
-            'stream': 'Biological Science',
-            'subjects': [
-                {'subject_code': '01', 'subject_name': 'Biology', 'grade': 'A'},
-                {'subject_code': '02', 'subject_name': 'Chemistry', 'grade': 'A'},
-                {'subject_code': '03', 'subject_name': 'Physics', 'grade': 'B'},
-                {'subject_code': '04', 'subject_name': 'General English', 'grade': 'B'}
-            ],
-            'status': 'pending',
-            'attempt_number': 1,
-            'is_private_candidate': False,
-            'z_score': 1.8234,
-            'district_rank': 45,
-            'island_rank': 234
-        }
-    ]
+    # ==================== ADD STUDENTS ====================
+    print(f"\n[1/4] Adding {len(seed_data['students'])} students...")
+    students_created = 0
+    students_map = {}  # index_number -> student_id mapping
     
-    # Get student IDs for results
-    for result_data in sample_results:
-        student = Student.query.filter_by(index_number=result_data['index_number']).first()
-        if student:
-            result_data['student_id'] = student.id
-            db_service.add_result(result_data)
+    for student_data in seed_data['students']:
+        try:
+            student = db_service.add_student(student_data)
+            students_map[student['index_number']] = student['id']
+            students_created += 1
+            if students_created % 20 == 0:
+                print(f"      Created {students_created} students...")
+        except Exception as e:
+            print(f"      Error creating student {student_data.get('index_number')}: {e}")
     
-    # Sample Users
+    print(f"      ✓ Successfully created {students_created} students")
+    
+    # ==================== ADD RESULTS ====================
+    print(f"\n[2/4] Adding {len(seed_data['results'])} exam results...")
+    results_created = 0
+    
+    for result_data in seed_data['results']:
+        try:
+            # Get student ID from map
+            index_number = result_data['index_number']
+            if index_number in students_map:
+                result_data['student_id'] = students_map[index_number]
+                db_service.add_result(result_data)
+                results_created += 1
+                if results_created % 20 == 0:
+                    print(f"      Created {results_created} results...")
+        except Exception as e:
+            print(f"      Error creating result {result_data.get('result_id')}: {e}")
+    
+    print(f"      ✓ Successfully created {results_created} exam results")
+    
+    # ==================== ADD CERTIFICATES ====================
+    print(f"\n[3/4] Adding {len(seed_data['certificates'])} sample certificates...")
+    certs_created = 0
+    
+    for cert_data in seed_data['certificates']:
+        try:
+            db_service.add_certificate(cert_data)
+            certs_created += 1
+        except Exception as e:
+            print(f"      Error creating certificate {cert_data.get('certificate_id')}: {e}")
+    
+    print(f"      ✓ Successfully created {certs_created} certificates")
+    
+    # ==================== ADD SYSTEM USERS ====================
+    print(f"\n[4/4] Adding system users...")
+    
     sample_users = [
         {
             'user_id': 'USR-001',
@@ -576,10 +520,60 @@ def init_sample_data(db_service: DatabaseService):
             'department': 'Department of Examinations',
             'employee_id': 'DOE-ISO-001',
             'is_active': True
+        },
+        {
+            'user_id': 'USR-003',
+            'username': 'dataentry',
+            'email': 'dataentry@doenets.lk',
+            'password_hash': User.hash_password('data123'),
+            'full_name': 'Data Entry Operator',
+            'role': 'data_entry',
+            'designation': 'Data Entry Operator',
+            'department': 'Department of Examinations',
+            'employee_id': 'DOE-DEO-001',
+            'is_active': True
+        },
+        {
+            'user_id': 'USR-004',
+            'username': 'verifier',
+            'email': 'verifier@doenets.lk',
+            'password_hash': User.hash_password('verify123'),
+            'full_name': 'Verification Officer',
+            'role': 'verifier',
+            'designation': 'Verification Officer',
+            'department': 'Department of Examinations',
+            'employee_id': 'DOE-VER-001',
+            'is_active': True
         }
     ]
     
+    users_created = 0
     for user_data in sample_users:
-        db_service.add_user(user_data)
+        try:
+            db_service.add_user(user_data)
+            users_created += 1
+            print(f"      Created user: {user_data['username']} ({user_data['role']})")
+        except Exception as e:
+            print(f"      Error creating user {user_data['username']}: {e}")
     
-    print("Sample data initialized successfully!")
+    print(f"      ✓ Successfully created {users_created} users")
+    
+    # ==================== SUMMARY ====================
+    stats = db_service.get_stats()
+    print(f"\n{'=' * 60}")
+    print("DATABASE SEED COMPLETE - Summary:")
+    print(f"{'=' * 60}")
+    print(f"  • Students:           {stats['total_students']}")
+    print(f"  • Exam Results:       {stats['total_results']}")
+    print(f"    - O/L Results:      {stats['ol_results']}")
+    print(f"    - A/L Results:      {stats['al_results']}")
+    print(f"  • Pending Certs:      {stats['pending_certification']}")
+    print(f"  • Issued Certificates: {stats['certificates_issued']}")
+    print(f"  • System Users:       {users_created}")
+    print(f"{'=' * 60}")
+    print("\nDefault Login Credentials:")
+    print(f"  • admin / admin123    (Administrator)")
+    print(f"  • issuer / issuer123  (Certificate Issuer)")
+    print(f"  • dataentry / data123 (Data Entry)")
+    print(f"  • verifier / verify123 (Verifier)")
+    print(f"{'=' * 60}\n")

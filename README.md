@@ -1,39 +1,80 @@
 # Document Verification System
 
-A blockchain-based document verification system for **Sri Lankan O/L and A/L certificates** with AI-powered forgery detection and OCR capabilities. This system uses smart contracts to ensure document authenticity and provides comprehensive analysis using machine learning techniques.
+A blockchain-based document verification system for Sri Lanka Department of Examinations (DOE) G.C.E. O/L and A/L certificate issuing and verification. This system uses smart contracts to ensure document authenticity and provides secure certificate management.
 
 ---
 
-## 🚀 Quick Start for Developers
+## 🔐 Default Login Credentials
 
-### For Blockchain Developer
-**Start here:** Read [`QUICK_START.md`](QUICK_START.md) for complete setup instructions!
+| Role | Username | Password | Description |
+|------|----------|----------|-------------|
+| **Admin** | `admin` | `admin123` | Full system access |
+| **Issuer** | `issuer` | `issuer123` | Certificate issuing officer |
+| **Data Entry** | `dataentry` | `data123` | Data entry operator |
+| **Verifier** | `verifier` | `verify123` | Verification officer |
 
-**Key files for you:**
-- `blockchain/contracts/DocumentVerification.sol` - Your smart contract
-- `backend/app/services/blockchain_service.py` - Python integration
-- `BLOCKCHAIN_GUIDE.md` - Complete learning guide
-- `IMPLEMENTATION_SUMMARY.md` - Overview of what's been created
+### Access URLs
+| Interface | URL | Description |
+|-----------|-----|-------------|
+| **Public Verification** | http://localhost:3000 | Verify certificates (no login required) |
+| **Staff Login** | http://localhost:3000/login | Login for DOE staff |
+| **Issuer Dashboard** | http://localhost:3000/issuer | Certificate issuing (after login) |
+| **Backend API** | http://localhost:5000 | REST API endpoints |
+| **Blockchain RPC** | http://localhost:8545 | Hardhat Ethereum node |
 
-### For Frontend/Document Extraction Developer
-The blockchain developer has created REST API endpoints at `/api/certificate/` that you can use:
-- POST `/api/certificate/register` - Register a certificate
-- POST `/api/certificate/verify` - Verify a certificate
-- See `backend/app/api/certificate_routes.py` for full API documentation
+---
+
+## 🗄️ Database Connection (PostgreSQL)
+
+Connect using Navicat, pgAdmin, or any PostgreSQL client:
+
+| Field | Value |
+|-------|-------|
+| **Host** | `localhost` |
+| **Port** | `5432` |
+| **Database** | `document_verification` |
+| **Username** | `docverify` |
+| **Password** | `docverify123` |
+
+### Database Tables
+- `students` - G.C.E exam candidates
+- `exam_results` - O/L and A/L results with subjects
+- `certificates` - Issued certificates with verification codes
+- `users` - System users and authentication
 
 ---
 
-## 📚 Documentation Index
+## 🌱 Automatic Test Data Seeding
 
-| Document | Purpose | Who Should Read |
-|----------|---------|-----------------|
-| [`QUICK_START.md`](QUICK_START.md) | Fast setup & daily workflow | **Blockchain developer** (Start here!) |
-| [`BLOCKCHAIN_GUIDE.md`](BLOCKCHAIN_GUIDE.md) | Complete blockchain concepts | **Blockchain developer** |
-| [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) | What has been created | Everyone |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Visual system diagrams | Everyone |
-| [`FILE_INDEX.md`](FILE_INDEX.md) | Complete file reference | Everyone |
+When the application starts with an **empty database**, it automatically seeds:
+
+| Data Type | Count | Description |
+|-----------|-------|-------------|
+| **Students** | 100 | Sri Lankan students with realistic names, NICs, schools |
+| **Exam Results** | 100 | O/L (60%) and A/L (40%) results with subjects |
+| **Certificates** | ~15 | Sample issued certificates with verification codes |
+| **Users** | 4 | System users (admin, issuer, data entry, verifier) |
+
+### Seed Data Features
+- **Realistic Sri Lankan Names**: Sinhala (80%) and Tamil (20%) names
+- **Schools**: From all 9 provinces across Sri Lanka
+- **Exam Types**: G.C.E O/L with 9 subjects, A/L with streams (Science, Commerce, Arts)
+- **Grades**: Realistic grade distribution (A, B, C, S, W)
+- **NIC Numbers**: Valid format based on date of birth
+- **A/L Features**: Z-scores, district/island ranks
+
+### Reset Database (Fresh Seed Data)
+```bash
+# Stop containers and remove database volume
+docker-compose down -v
+
+# Start again (fresh database with new seed data)
+docker-compose up --build
+```
 
 ---
+
+## 🚀 Quick Start
 
 ### Run the Application
 
@@ -64,11 +105,6 @@ npm start
 # Start all services
 docker-compose up --build
 ```
-
-**Access the application:**
-- 🌐 Frontend: http://localhost:3000
-- 🔧 Backend API: http://localhost:5000
-- ⛓️ Blockchain RPC: http://localhost:8545
 
 ### Stop the Application
 
