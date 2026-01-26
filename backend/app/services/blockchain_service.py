@@ -178,7 +178,8 @@ class BlockchainService:
             # Call smart contract view function
             result = self.contract.functions.verifyDocument(document_hash).call()
             
-            exists, is_valid, issuer, owner, timestamp, doc_type, ipfs_hash = result
+            # Unpack all 10 return values
+            exists, is_valid, issuer, owner, timestamp, doc_type, ipfs_hash, student_index, exam_year, exam_subject = result
             
             return {
                 'exists': exists,
@@ -188,6 +189,53 @@ class BlockchainService:
                 'timestamp': timestamp,
                 'document_type': doc_type,
                 'ipfs_hash': ipfs_hash,
+                'student_index': student_index,
+                'exam_year': exam_year,
+                'exam_subject': exam_subject,
+                'verified_on_blockchain': exists and is_valid
+            }
+            
+        except Exception as e:
+            return {
+                'exists': False,
+                'error': str(e)
+            }
+    
+    def verify_by_student_index(self, student_index: str) -> Dict:
+        """
+        Verify a document by student index number
+        
+        Args:
+            student_index: Student index number (e.g., "2023OL123456")
+            
+        Returns:
+            Dictionary with verification results including document hash
+        """
+        try:
+            # Call smart contract view function
+            result = self.contract.functions.verifyByStudentIndex(student_index).call()
+            
+            # Unpack all 10 return values
+            exists, is_valid, issuer, owner, timestamp, doc_type, ipfs_hash, doc_hash, exam_year, exam_subject = result
+            
+            if not exists:
+                return {
+                    'exists': False,
+                    'message': f'No certificate found for student index: {student_index}'
+                }
+            
+            return {
+                'exists': exists,
+                'is_valid': is_valid,
+                'issuer': issuer,
+                'owner': owner,
+                'timestamp': timestamp,
+                'document_type': doc_type,
+                'ipfs_hash': ipfs_hash,
+                'document_hash': doc_hash,
+                'student_index': student_index,
+                'exam_year': exam_year,
+                'exam_subject': exam_subject,
                 'verified_on_blockchain': exists and is_valid
             }
             

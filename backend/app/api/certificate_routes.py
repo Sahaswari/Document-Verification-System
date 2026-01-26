@@ -213,6 +213,20 @@ def verify_by_student_index():
     {
         "student_index": "2023OL123456"
     }
+    
+    Response:
+    {
+        "verified": true/false,
+        "exists": true/false,
+        "details": {
+            "document_hash": "...",
+            "student_index": "...",
+            "exam_year": 2023,
+            "exam_type": "OL",
+            "is_valid": true,
+            ...
+        }
+    }
     """
     try:
         data = request.get_json()
@@ -221,23 +235,29 @@ def verify_by_student_index():
         if not student_index:
             return jsonify({'error': 'student_index is required'}), 400
         
+        # Validate student index format (basic validation)
+        student_index = student_index.strip().upper()
+        
         blockchain = get_blockchain_service()
         
-        # Get document hash from student index
-        document_hash = blockchain.contract.functions.getDocumentByIndex(student_index).call()
+        # Use the new verify_by_student_index method
+        result = blockchain.verify_by_student_index(student_index)
         
-        if not document_hash:
+        if not result['exists']:
             return jsonify({
                 'verified': False,
-                'message': 'No certificate found for this student index'
+                'exists': False,
+                'message': result.get('message', 'No certificate found for this student index')
             }), 200
         
-        # Verify the document
-        result = blockchain.verify_document(document_hash)
-        
         return jsonify({
-            'verified': result['exists'] and result['is_valid'],
+            'verified': result['is_valid'],
+            'exists': True,
             'details': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
         }), 200
         
     except Exception as e:
