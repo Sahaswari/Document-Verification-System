@@ -104,6 +104,7 @@ const VerifyPage = () => {
     resetForm();
 
     try {
+      console.log('Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
       const data = await verifyByFile(selectedFile);
       console.log('Verify by file response:', data);
       
@@ -115,8 +116,10 @@ const VerifyPage = () => {
           message: data.message || 'Certificate verified successfully'
         });
       } else if (data.exists === false) {
+        console.log('Certificate not found on blockchain:', data);
         setError(data.warning || 'Certificate not found on blockchain. This certificate may not be registered or could be fraudulent.');
       } else {
+        console.log('Verification failed:', data);
         setError(data.message || data.error || 'Certificate verification failed');
       }
     } catch (err) {

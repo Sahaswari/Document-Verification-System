@@ -464,9 +464,22 @@ def generate_certificate_pdf_if_missing(certificate):
     """Generate PDF for a certificate if it doesn't exist"""
     pdf_path = certificate.get('pdf_path')
     
-    # If PDF exists, return it
+    # If PDF exists at stored path, return it
     if pdf_path and os.path.exists(pdf_path):
         return pdf_path, None
+    
+    # Also check if PDF exists at expected location based on naming convention
+    exam_type = certificate.get('exam_type', 'OL')
+    exam_year = certificate.get('exam_year', 2024)
+    index_number = certificate.get('index_number', '')
+    expected_path = f'/app/certificates/GCE_{exam_type}_{exam_year}_{index_number}.pdf'
+    
+    if os.path.exists(expected_path):
+        # PDF exists, update the database with the correct path and return
+        db_service.update_certificate(certificate.get('certificate_id'), {
+            'pdf_path': expected_path
+        })
+        return expected_path, None
     
     # Get the result data for this certificate
     result = db_service.get_result(certificate.get('result_id'))
@@ -512,10 +525,18 @@ def generate_certificate_pdf_if_missing(certificate):
         )
         
         # Update the certificate record with the PDF path
-        db_service.update_certificate(certificate.get('certificate_id'), {
-            'pdf_path': filepath,
-            'document_hash': doc_hash
-        })
+        # IMPORTANT: Only update document_hash if it doesn't already exist
+        # (to avoid breaking blockchain verification)
+        update_data = {'pdf_path': filepath}
+        existing_hash = certificate.get('document_hash')
+        if not existing_hash:
+            update_data['document_hash'] = doc_hash
+        else:
+            # Log warning if hashes don't match (PDF was regenerated with different hash)
+            if existing_hash != doc_hash:
+                print(f"WARNING: Regenerated PDF hash ({doc_hash[:16]}...) differs from stored hash ({existing_hash[:16]}...) for certificate {certificate.get('certificate_id')}")
+        
+        db_service.update_certificate(certificate.get('certificate_id'), update_data)
         
         return filepath, None
     except Exception as e:
