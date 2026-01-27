@@ -84,6 +84,24 @@ const IssuerDashboard = () => {
     document.body.removeChild(link);
   };
 
+  const viewCertificateImage = (certificateId) => {
+    const token = localStorage.getItem('token');
+    window.open(
+      `http://localhost:5000/api/certificates/${certificateId}/preview-image?token=${token}`,
+      '_blank'
+    );
+  };
+
+  const downloadCertificateImage = (certificateId) => {
+    const token = localStorage.getItem('token');
+    const link = document.createElement('a');
+    link.href = `http://localhost:5000/api/certificates/${certificateId}/download-image?token=${token}`;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -293,14 +311,28 @@ const IssuerDashboard = () => {
                             onClick={() => viewCertificatePdf(cert.certificate_id)}
                             title="View PDF in new tab"
                           >
-                            👁️ View
+                            👁️ PDF
                           </button>
                           <button
                             className="download-btn"
                             onClick={() => downloadCertificatePdf(cert.certificate_id)}
                             title="Download PDF"
                           >
-                            📥 Download
+                            📥 PDF
+                          </button>
+                          <button
+                            className="view-btn image-btn"
+                            onClick={() => viewCertificateImage(cert.certificate_id)}
+                            title="View Image in new tab"
+                          >
+                            🖼️ IMG
+                          </button>
+                          <button
+                            className="download-btn image-btn"
+                            onClick={() => downloadCertificateImage(cert.certificate_id)}
+                            title="Download Image (PNG)"
+                          >
+                            📥 IMG
                           </button>
                         </td>
                       </tr>

@@ -371,17 +371,30 @@ def issue_certificate(current_user):
         'certificate_id': certificate_id
     })
     
-    # Generate PDF
+    # Generate PDF and PNG image
     try:
-        pdf_bytes, doc_hash, filepath = pdf_generator.generate_certificate(
+        result_tuple = pdf_generator.generate_certificate(
             student_data=student,
             result_data=result,
             certificate_data=cert_data
         )
         
+        # Handle both old (3 values) and new (5 values) return format
+        if len(result_tuple) == 5:
+            pdf_bytes, doc_hash, filepath, image_hash, image_path = result_tuple
+        else:
+            pdf_bytes, doc_hash, filepath = result_tuple
+            image_hash, image_path = None, None
+        
         cert_data['document_hash'] = doc_hash
         cert_data['pdf_path'] = filepath
         cert_data['status'] = 'active'
+        
+        # Store image hash and path if available
+        if image_hash:
+            cert_data['image_hash'] = image_hash
+        if image_path:
+            cert_data['image_path'] = image_path
         
     except Exception as e:
         return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
@@ -584,6 +597,63 @@ def preview_certificate(current_user, certificate_id):
     return send_file(
         pdf_path,
         mimetype='application/pdf',
+        as_attachment=False
+    )
+
+
+@app.route('/api/certificates/<certificate_id>/download-image', methods=['GET'])
+@token_required
+def download_certificate_image(current_user, certificate_id):
+    """Download certificate as PNG image"""
+    certificate = db_service.get_certificate(certificate_id)
+    if not certificate:
+        return jsonify({'error': 'Certificate not found'}), 404
+    
+    # Check if image exists
+    image_path = certificate.get('image_path')
+    
+    # If not stored, try expected path
+    if not image_path:
+        exam_type = certificate.get('exam_type', 'OL')
+        exam_year = certificate.get('exam_year', 2024)
+        index_number = certificate.get('index_number', '')
+        image_path = f'/app/certificates/GCE_{exam_type}_{exam_year}_{index_number}.png'
+    
+    if not os.path.exists(image_path):
+        return jsonify({'error': 'Certificate image not found. Please download the PDF first to generate the image.'}), 404
+    
+    return send_file(
+        image_path,
+        mimetype='image/png',
+        as_attachment=True,
+        download_name=os.path.basename(image_path)
+    )
+
+
+@app.route('/api/certificates/<certificate_id>/preview-image', methods=['GET'])
+@token_required
+def preview_certificate_image(current_user, certificate_id):
+    """Preview certificate image (inline)"""
+    certificate = db_service.get_certificate(certificate_id)
+    if not certificate:
+        return jsonify({'error': 'Certificate not found'}), 404
+    
+    # Check if image exists
+    image_path = certificate.get('image_path')
+    
+    # If not stored, try expected path
+    if not image_path:
+        exam_type = certificate.get('exam_type', 'OL')
+        exam_year = certificate.get('exam_year', 2024)
+        index_number = certificate.get('index_number', '')
+        image_path = f'/app/certificates/GCE_{exam_type}_{exam_year}_{index_number}.png'
+    
+    if not os.path.exists(image_path):
+        return jsonify({'error': 'Certificate image not found. Please download the PDF first to generate the image.'}), 404
+    
+    return send_file(
+        image_path,
+        mimetype='image/png',
         as_attachment=False
     )
 

@@ -147,6 +147,7 @@ def verify_certificate():
     METHOD 3: Verify a certificate by uploading it (File Upload)
     
     Compares the uploaded file's hash with blockchain records.
+    Supports both PDF and PNG image certificate files.
     Also verifies results integrity if results are provided.
     
     Expected form data:
@@ -162,12 +163,17 @@ def verify_certificate():
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
         
+        # Determine file type
+        filename = file.filename.lower()
+        is_image = filename.endswith(('.png', '.jpg', '.jpeg'))
+        file_type = 'image' if is_image else 'pdf'
+        
         # Calculate hash of uploaded file
         file_content = file.read()
         blockchain = get_blockchain_service()
         document_hash = blockchain.calculate_content_hash(file_content)
         
-        # Query blockchain
+        # First, try to verify against blockchain (for PDF hashes)
         result = blockchain.verify_document(document_hash)
         
         if result.get('exists'):
@@ -175,6 +181,7 @@ def verify_certificate():
                 'verified': result['is_valid'],
                 'exists': True,
                 'method': 'file_upload',
+                'file_type': file_type,
                 'certificate_details': {
                     'document_hash': document_hash,
                     'document_type': result['document_type'],
@@ -201,15 +208,63 @@ def verify_certificate():
                     response['results_integrity'] = {'error': 'Invalid results JSON'}
             
             return jsonify(response), 200
-        else:
-            return jsonify({
-                'verified': False,
-                'exists': False,
-                'method': 'file_upload',
-                'uploaded_hash': document_hash,
-                'message': 'Certificate not found on blockchain',
-                'warning': 'This certificate has not been registered or may be fraudulent'
-            }), 200
+        
+        # If not found on blockchain, check if it's an image hash in the database
+        if is_image:
+            from app.services.database import db, Certificate
+            
+            # Look up certificate by image hash
+            cert = Certificate.query.filter_by(image_hash=document_hash).first()
+            
+            if cert:
+                # Found! Now verify the PDF hash is on blockchain
+                pdf_result = blockchain.verify_document(cert.document_hash)
+                
+                if pdf_result.get('exists'):
+                    response = {
+                        'verified': pdf_result['is_valid'],
+                        'exists': True,
+                        'method': 'image_upload',
+                        'file_type': 'image',
+                        'certificate_details': {
+                            'document_hash': cert.document_hash,
+                            'image_hash': document_hash,
+                            'document_type': pdf_result['document_type'],
+                            'student_index': pdf_result.get('student_index'),
+                            'exam_year': pdf_result.get('exam_year'),
+                            'verification_code': pdf_result.get('verification_code'),
+                            'results_hash': pdf_result.get('results_hash'),
+                            'issued_by': pdf_result['issuer'],
+                            'registration_timestamp': pdf_result['timestamp'],
+                            'is_valid': pdf_result['is_valid']
+                        },
+                        'message': 'Certificate image verified! Corresponding PDF found on blockchain.',
+                        'blockchain_verified': True,
+                        'note': 'This image matches an official certificate registered on the blockchain.'
+                    }
+                    return jsonify(response), 200
+                else:
+                    # Image hash found in DB but PDF not on blockchain (edge case)
+                    return jsonify({
+                        'verified': False,
+                        'exists': True,
+                        'method': 'image_upload',
+                        'file_type': 'image',
+                        'uploaded_hash': document_hash,
+                        'message': 'Certificate image found in database but PDF not verified on blockchain',
+                        'warning': 'This certificate may be pending blockchain registration'
+                    }), 200
+        
+        # Not found anywhere
+        return jsonify({
+            'verified': False,
+            'exists': False,
+            'method': 'file_upload',
+            'file_type': file_type,
+            'uploaded_hash': document_hash,
+            'message': 'Certificate not found on blockchain',
+            'warning': 'This certificate has not been registered or may be fraudulent'
+        }), 200
             
     except Exception as e:
         return jsonify({

@@ -119,6 +119,7 @@ class Certificate(db.Model):
     exam_year = db.Column(db.Integer, nullable=False)
     verification_code = db.Column(db.String(50), unique=True, nullable=False, index=True)
     document_hash = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    image_hash = db.Column(db.String(128), index=True)  # Hash of PNG certificate image
     blockchain_tx_hash = db.Column(db.String(128))
     issued_by = db.Column(db.String(50))  # User ID who issued
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -127,6 +128,7 @@ class Certificate(db.Model):
     revoked_by = db.Column(db.String(50))
     revocation_reason = db.Column(db.Text)
     pdf_path = db.Column(db.String(500))
+    image_path = db.Column(db.String(500))  # Path to PNG certificate image
     
     def to_dict(self, include_result=False):
         data = {
@@ -138,10 +140,12 @@ class Certificate(db.Model):
             'exam_year': self.exam_year,
             'verification_code': self.verification_code,
             'document_hash': self.document_hash,
+            'image_hash': self.image_hash,
             'blockchain_tx_hash': self.blockchain_tx_hash,
             'issued_by': self.issued_by,
             'issued_at': self.issued_at.isoformat() if self.issued_at else None,
-            'status': self.status
+            'status': self.status,
+            'image_path': self.image_path
         }
         if include_result and self.result:
             data['result'] = self.result.to_dict(include_student=True)

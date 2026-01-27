@@ -17,6 +17,14 @@ from reportlab.graphics.shapes import Drawing
 from reportlab.graphics import renderPDF
 import hashlib
 
+# Try to import pdf2image for PNG generation
+try:
+    from pdf2image import convert_from_bytes
+    PDF2IMAGE_AVAILABLE = True
+except ImportError:
+    PDF2IMAGE_AVAILABLE = False
+    print("Warning: pdf2image not available. PNG generation disabled.")
+
 
 class CertificatePDFGenerator:
     """Generate official G.C.E certificates in PDF format"""
@@ -84,8 +92,8 @@ class CertificatePDFGenerator:
         certificate_data: dict
     ) -> tuple:
         """
-        Generate G.C.E Certificate PDF
-        Returns: (pdf_bytes, document_hash, filepath)
+        Generate G.C.E Certificate PDF and PNG image
+        Returns: (pdf_bytes, document_hash, filepath, image_hash, image_path)
         """
         exam_type = result_data.get('exam_type', 'OL')
         exam_year = result_data.get('exam_year', datetime.now().year)
@@ -115,8 +123,60 @@ class CertificatePDFGenerator:
         pdf_bytes = buffer.getvalue()
         buffer.close()
         
-        # Calculate document hash
+        # Calculate PDF document hash
         document_hash = hashlib.sha256(pdf_bytes).hexdigest()
+        
+        # Save PDF to file
+        with open(filepath, 'wb') as f:
+            f.write(pdf_bytes)
+        
+        # Generate PNG image and calculate its hash
+        image_hash = None
+        image_path = None
+        
+        if PDF2IMAGE_AVAILABLE:
+            try:
+                image_hash, image_path = self._generate_certificate_image(
+                    pdf_bytes, exam_type, exam_year, index_number
+                )
+            except Exception as e:
+                print(f"Warning: Failed to generate PNG image: {e}")
+        
+        return pdf_bytes, document_hash, filepath, image_hash, image_path
+    
+    def _generate_certificate_image(self, pdf_bytes: bytes, exam_type: str, 
+                                    exam_year: int, index_number: str) -> tuple:
+        """
+        Convert PDF to PNG image and calculate hash
+        Returns: (image_hash, image_path)
+        """
+        # Convert PDF to image (300 DPI for high quality)
+        images = convert_from_bytes(pdf_bytes, dpi=300)
+        
+        if not images:
+            return None, None
+        
+        # Get the first page (certificate is single page)
+        img = images[0]
+        
+        # Generate filename
+        image_filename = f"GCE_{exam_type}_{exam_year}_{index_number}.png"
+        image_path = os.path.join(self.output_dir, image_filename)
+        
+        # Save image to bytes for hashing
+        img_buffer = BytesIO()
+        img.save(img_buffer, format='PNG', optimize=True)
+        img_bytes = img_buffer.getvalue()
+        img_buffer.close()
+        
+        # Calculate image hash
+        image_hash = hashlib.sha256(img_bytes).hexdigest()
+        
+        # Save image to file
+        with open(image_path, 'wb') as f:
+            f.write(img_bytes)
+        
+        return image_hash, image_path
         
         # Save to file
         with open(filepath, 'wb') as f:

@@ -389,6 +389,23 @@
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
 }
 
+/* Image buttons - different colors */
+.view-btn.image-btn {
+  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.view-btn.image-btn:hover {
+  box-shadow: 0 4px 12px rgba(237, 137, 54, 0.4);
+}
+
+.download-btn.image-btn {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.download-btn.image-btn:hover {
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+}
+
 /* Verification Code */
 .verification-code {
   background: #f7fafc;
