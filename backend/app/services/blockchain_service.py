@@ -1,6 +1,13 @@
 """
 Blockchain Integration Module for Document Verification System
 This module handles all interactions with the Ethereum smart contract
+
+Best Practices Implemented:
+- Privacy: Personal data stored as hashes, not plain text
+- Gas Efficiency: Minimal storage, using hashes for large data  
+- Security: Only authorized issuers can register/revoke
+- Verifiability: Multiple lookup methods (hash, code, index)
+- Integrity: Results hash ensures grade tampering detection
 """
 
 import json
@@ -14,6 +21,10 @@ from typing import Dict, Tuple, Optional
 class BlockchainService:
     """
     Service class for interacting with the DocumentVerification smart contract
+    Supports three verification methods:
+    1. By Verification Code (Certificate ID)
+    2. By Student Index Number
+    3. By Document Hash (File Upload)
     """
     
     def __init__(self, provider_url: str = None, contract_address: str = None):
@@ -69,7 +80,7 @@ class BlockchainService:
     @staticmethod
     def calculate_document_hash(file_path: str) -> str:
         """
-        Calculate SHA-256 hash of a document
+        Calculate SHA-256 hash of a document file
         
         Args:
             file_path: Path to the document file
@@ -79,7 +90,6 @@ class BlockchainService:
         """
         sha256_hash = hashlib.sha256()
         with open(file_path, "rb") as f:
-            # Read file in chunks for memory efficiency
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
@@ -97,55 +107,84 @@ class BlockchainService:
         """
         return hashlib.sha256(content).hexdigest()
     
+    @staticmethod
+    def calculate_results_hash(results: list) -> str:
+        """
+        Calculate SHA-256 hash of exam results for integrity verification
+        
+        Args:
+            results: List of subject results (e.g., [{"subject": "Mathematics", "grade": "A"}])
+            
+        Returns:
+            Hexadecimal hash string
+        """
+        # Sort results by subject for consistent hashing
+        sorted_results = sorted(results, key=lambda x: x.get('subject', ''))
+        results_str = json.dumps(sorted_results, sort_keys=True, separators=(',', ':'))
+        return hashlib.sha256(results_str.encode()).hexdigest()
+    
+    @staticmethod
+    def calculate_student_info_hash(student_info: dict) -> str:
+        """
+        Calculate SHA-256 hash of student personal info (for privacy)
+        
+        Args:
+            student_info: Dict with student details (name, DOB, etc.)
+            
+        Returns:
+            Hexadecimal hash string
+        """
+        info_str = json.dumps(student_info, sort_keys=True, separators=(',', ':'))
+        return hashlib.sha256(info_str.encode()).hexdigest()
+    
     def register_document(
         self,
         document_hash: str,
-        ipfs_hash: str,
+        results_hash: str,
+        verification_code: str,
+        student_info_hash: str,
         owner_address: str,
         document_type: str,
+        student_index: str,
+        exam_year: int,
+        exam_subject: str,
         issuer_private_key: Optional[str] = None
     ) -> Dict:
         """
-        Register a document on the blockchain
+        Register a certificate on the blockchain with all verification data
         
         Args:
-            document_hash: SHA-256 hash of the document
-            ipfs_hash: IPFS hash where document metadata is stored
-            owner_address: Ethereum address of the document owner (student)
-            document_type: Type of document (e.g., "O/L", "A/L")
-            issuer_private_key: Private key of issuer (optional, uses default account if not provided)
+            document_hash: SHA-256 hash of the certificate PDF
+            results_hash: SHA-256 hash of exam results JSON
+            verification_code: Human-readable verification code
+            student_info_hash: Hash of student personal info
+            owner_address: Student's Ethereum address (or zero address)
+            document_type: "O/L" or "A/L"
+            student_index: Student index number
+            exam_year: Year of examination
+            exam_subject: Subject/Stream
+            issuer_private_key: Private key of issuer (optional)
             
         Returns:
             Transaction receipt dictionary
         """
         try:
-            # Prepare transaction
-            tx_params = {
-                'from': self.w3.eth.default_account,
-                'gas': 2000000,
-                'gasPrice': self.w3.eth.gas_price
-            }
+            # Use zero address if no owner provided
+            if not owner_address or owner_address == '0x0':
+                owner_address = '0x0000000000000000000000000000000000000000'
             
-            # Build transaction
-            transaction = self.contract.functions.registerDocument(
+            # Build and send transaction
+            tx_hash = self.contract.functions.registerDocument(
                 document_hash,
-                ipfs_hash,
+                results_hash,
+                verification_code,
+                student_info_hash,
                 Web3.to_checksum_address(owner_address),
-                document_type
-            ).build_transaction(tx_params)
-            
-            # Sign and send transaction
-            if issuer_private_key:
-                signed_txn = self.w3.eth.account.sign_transaction(transaction, issuer_private_key)
-                tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            else:
-                # Use default account (works with Hardhat local node)
-                tx_hash = self.contract.functions.registerDocument(
-                    document_hash,
-                    ipfs_hash,
-                    Web3.to_checksum_address(owner_address),
-                    document_type
-                ).transact()
+                document_type,
+                student_index,
+                int(exam_year),
+                exam_subject
+            ).transact()
             
             # Wait for transaction confirmation
             tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -155,7 +194,8 @@ class BlockchainService:
                 'transaction_hash': tx_hash.hex(),
                 'block_number': tx_receipt['blockNumber'],
                 'gas_used': tx_receipt['gasUsed'],
-                'document_hash': document_hash
+                'document_hash': document_hash,
+                'verification_code': verification_code
             }
             
         except Exception as e:
@@ -166,20 +206,25 @@ class BlockchainService:
     
     def verify_document(self, document_hash: str) -> Dict:
         """
-        Verify a document on the blockchain
+        Verify a certificate by its document hash (Method 3: File Upload)
         
         Args:
-            document_hash: SHA-256 hash of the document
+            document_hash: SHA-256 hash of the certificate PDF
             
         Returns:
             Dictionary with verification results
         """
         try:
-            # Call smart contract view function
             result = self.contract.functions.verifyDocument(document_hash).call()
             
-            # Unpack all 10 return values
-            exists, is_valid, issuer, owner, timestamp, doc_type, ipfs_hash, student_index, exam_year, exam_subject = result
+            # Unpack return values
+            exists, is_valid, issuer, owner, timestamp, doc_type, verification_code, results_hash, student_index, exam_year = result
+            
+            if not exists:
+                return {
+                    'exists': False,
+                    'message': 'Certificate not found on blockchain'
+                }
             
             return {
                 'exists': exists,
@@ -188,10 +233,53 @@ class BlockchainService:
                 'owner': owner,
                 'timestamp': timestamp,
                 'document_type': doc_type,
-                'ipfs_hash': ipfs_hash,
+                'verification_code': verification_code,
+                'results_hash': results_hash,
+                'student_index': student_index,
+                'exam_year': exam_year,
+                'verified_on_blockchain': exists and is_valid
+            }
+            
+        except Exception as e:
+            return {
+                'exists': False,
+                'error': str(e)
+            }
+    
+    def verify_by_code(self, verification_code: str) -> Dict:
+        """
+        Verify a certificate by verification code (Method 1: Certificate ID)
+        
+        Args:
+            verification_code: Human-readable verification code (e.g., "DOE-OL2024-A1B2C3D4")
+            
+        Returns:
+            Dictionary with verification results
+        """
+        try:
+            result = self.contract.functions.verifyByCode(verification_code).call()
+            
+            # Unpack return values
+            exists, is_valid, doc_hash, results_hash, doc_type, student_index, exam_year, exam_subject, timestamp, issuer = result
+            
+            if not exists:
+                return {
+                    'exists': False,
+                    'message': f'No certificate found with code: {verification_code}'
+                }
+            
+            return {
+                'exists': exists,
+                'is_valid': is_valid,
+                'document_hash': doc_hash,
+                'results_hash': results_hash,
+                'document_type': doc_type,
                 'student_index': student_index,
                 'exam_year': exam_year,
                 'exam_subject': exam_subject,
+                'timestamp': timestamp,
+                'issuer': issuer,
+                'verification_code': verification_code,
                 'verified_on_blockchain': exists and is_valid
             }
             
@@ -203,20 +291,19 @@ class BlockchainService:
     
     def verify_by_student_index(self, student_index: str) -> Dict:
         """
-        Verify a document by student index number
+        Verify a certificate by student index (Method 2: Student Index)
         
         Args:
-            student_index: Student index number (e.g., "2023OL123456")
+            student_index: Student index number (e.g., "2024-OL-001234")
             
         Returns:
-            Dictionary with verification results including document hash
+            Dictionary with verification results including results hash
         """
         try:
-            # Call smart contract view function
             result = self.contract.functions.verifyByStudentIndex(student_index).call()
             
-            # Unpack all 10 return values
-            exists, is_valid, issuer, owner, timestamp, doc_type, ipfs_hash, doc_hash, exam_year, exam_subject = result
+            # Unpack return values
+            exists, is_valid, doc_hash, results_hash, verification_code, doc_type, exam_year, exam_subject, timestamp, cert_count = result
             
             if not exists:
                 return {
@@ -227,15 +314,15 @@ class BlockchainService:
             return {
                 'exists': exists,
                 'is_valid': is_valid,
-                'issuer': issuer,
-                'owner': owner,
-                'timestamp': timestamp,
-                'document_type': doc_type,
-                'ipfs_hash': ipfs_hash,
                 'document_hash': doc_hash,
-                'student_index': student_index,
+                'results_hash': results_hash,
+                'verification_code': verification_code,
+                'document_type': doc_type,
                 'exam_year': exam_year,
                 'exam_subject': exam_subject,
+                'timestamp': timestamp,
+                'student_index': student_index,
+                'certificate_count': cert_count,
                 'verified_on_blockchain': exists and is_valid
             }
             
@@ -245,35 +332,68 @@ class BlockchainService:
                 'error': str(e)
             }
     
-    def revoke_document(self, document_hash: str, issuer_private_key: Optional[str] = None) -> Dict:
+    def verify_results_integrity(self, document_hash: str, results: list) -> Dict:
         """
-        Revoke a document (mark as invalid)
+        Verify that exam results haven't been tampered with
         
         Args:
-            document_hash: SHA-256 hash of the document
+            document_hash: Document hash to look up
+            results: List of results to verify against stored hash
+            
+        Returns:
+            Dictionary with integrity verification result
+        """
+        try:
+            # Calculate hash of provided results
+            provided_hash = self.calculate_results_hash(results)
+            
+            # Call contract to compare
+            result = self.contract.functions.verifyResultsIntegrity(document_hash, provided_hash).call()
+            matches, stored_hash = result
+            
+            return {
+                'integrity_valid': matches,
+                'provided_hash': provided_hash,
+                'stored_hash': stored_hash,
+                'message': 'Results integrity verified - no tampering detected' if matches else 'WARNING: Results have been modified!'
+            }
+            
+        except Exception as e:
+            return {
+                'integrity_valid': False,
+                'error': str(e)
+            }
+    
+    def get_student_certificates(self, student_index: str) -> list:
+        """
+        Get all certificates for a student
+        
+        Args:
+            student_index: Student index number
+            
+        Returns:
+            List of document hashes
+        """
+        try:
+            return self.contract.functions.getStudentCertificates(student_index).call()
+        except Exception as e:
+            print(f"Error getting student certificates: {e}")
+            return []
+    
+    def revoke_document(self, document_hash: str, reason: str = "Administrative revocation", issuer_private_key: Optional[str] = None) -> Dict:
+        """
+        Revoke a certificate
+        
+        Args:
+            document_hash: SHA-256 hash of the certificate
+            reason: Reason for revocation
             issuer_private_key: Private key of the issuer (optional)
             
         Returns:
             Transaction receipt dictionary
         """
         try:
-            if issuer_private_key:
-                # Build and sign transaction
-                transaction = self.contract.functions.revokeDocument(
-                    document_hash
-                ).build_transaction({
-                    'from': self.w3.eth.default_account,
-                    'gas': 200000,
-                    'gasPrice': self.w3.eth.gas_price,
-                    'nonce': self.w3.eth.get_transaction_count(self.w3.eth.default_account)
-                })
-                
-                signed_txn = self.w3.eth.account.sign_transaction(transaction, issuer_private_key)
-                tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-            else:
-                # Use default account
-                tx_hash = self.contract.functions.revokeDocument(document_hash).transact()
-            
+            tx_hash = self.contract.functions.revokeDocument(document_hash, reason).transact()
             tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
             
             return {
@@ -288,41 +408,36 @@ class BlockchainService:
                 'error': str(e)
             }
     
-    def get_user_documents(self, user_address: str) -> list:
-        """
-        Get all documents owned by a user
-        
-        Args:
-            user_address: Ethereum address of the user
-            
-        Returns:
-            List of document hashes
-        """
+    def get_statistics(self) -> Dict:
+        """Get contract statistics"""
         try:
-            documents = self.contract.functions.getUserDocuments(
+            total, revoked, active = self.contract.functions.getStatistics().call()
+            return {
+                'total_certificates': total,
+                'revoked_certificates': revoked,
+                'active_certificates': active
+            }
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def get_user_documents(self, user_address: str) -> list:
+        """Get all documents owned by a user"""
+        try:
+            return self.contract.functions.getUserDocuments(
                 Web3.to_checksum_address(user_address)
             ).call()
-            return documents
         except Exception as e:
             print(f"Error getting user documents: {e}")
             return []
     
     def get_account_balance(self, address: str = None) -> float:
-        """
-        Get ETH balance of an account
-        
-        Args:
-            address: Account address (uses default if not provided)
-            
-        Returns:
-            Balance in ETH
-        """
+        """Get ETH balance of an account"""
         address = address or self.w3.eth.default_account
         balance_wei = self.w3.eth.get_balance(Web3.to_checksum_address(address))
         return float(self.w3.from_wei(balance_wei, 'ether'))
 
 
-# Singleton instance for easy import
+# Singleton instance
 _blockchain_service = None
 
 def get_blockchain_service() -> BlockchainService:

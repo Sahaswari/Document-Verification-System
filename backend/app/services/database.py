@@ -493,8 +493,21 @@ def init_sample_data(db_service: DatabaseService, student_count: int = 100):
     
     print(f"      ✓ Successfully created {certs_created} certificates")
     
+    # ==================== REGISTER ON BLOCKCHAIN ====================
+    print(f"\n[4/5] Registering certificates on blockchain...")
+    try:
+        from app.services.blockchain_utils import register_certificates_on_blockchain
+        blockchain_results = register_certificates_on_blockchain(
+            certificates=seed_data['certificates'],
+            results=seed_data['results'],
+            students=seed_data['students']
+        )
+    except Exception as e:
+        print(f"      ⚠️  Blockchain registration skipped: {e}")
+        blockchain_results = []
+    
     # ==================== ADD SYSTEM USERS ====================
-    print(f"\n[4/4] Adding system users...")
+    print(f"\n[5/5] Adding system users...")
     
     sample_users = [
         {
