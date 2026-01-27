@@ -1,7 +1,7 @@
 {
   "name": "document-verification-blockchain",
   "version": "1.0.0",
-  "description": "Smart contracts for document verification",
+  "description": "Smart contracts for Sri Lankan Certificate Verification - Academic Project",
   "scripts": {
     "node": "hardhat node",
     "compile": "hardhat compile",
@@ -14,5 +14,15 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0"
-  }
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "solidity",
+    "certificate-verification",
+    "sri-lanka",
+    "academic-project"
+  ],
+  "author": "Blockchain & Cyber Security Module - University Project",
+  "license": "MIT"
 }
