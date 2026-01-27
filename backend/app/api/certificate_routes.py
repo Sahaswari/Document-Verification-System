@@ -535,12 +535,6 @@ def blockchain_status():
             'error': str(e)
         }), 500
 
-
-# ===========================================
-# BLOCKCHAIN DEMONSTRATION ENDPOINTS
-# For Academic Presentation - Shows blockchain concepts
-# ===========================================
-
 @certificate_bp.route('/demo/blockchain-info', methods=['GET'])
 def demo_blockchain_info():
     """
