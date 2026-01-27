@@ -322,8 +322,8 @@ def verify_by_student_index():
         if not student_index:
             return jsonify({'error': 'student_index is required'}), 400
         
-        # Normalize student index
-        student_index = student_index.strip().upper()
+        # Normalize student index (preserve case as stored)
+        student_index = student_index.strip()
         
         blockchain = get_blockchain_service()
         result = blockchain.verify_by_student_index(student_index)

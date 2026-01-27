@@ -37,8 +37,14 @@ const VerifyPage = () => {
     try {
       const data = await verifyCertificate({ verification_code: verificationCode.trim() });
       
-      if (data.valid) {
-        setResult({ ...data, method: 'code' });
+      if (data.valid || data.verified) {
+        setResult({ 
+          valid: true,
+          method: data.source === 'blockchain' ? 'blockchain' : 'code',
+          certificate: data.certificate || data.certificate_details,
+          blockchain: data.certificate || data.certificate_details,
+          message: data.message || 'Certificate verified successfully'
+        });
       } else {
         setError(data.message || 'Certificate not found or invalid');
       }
@@ -63,13 +69,14 @@ const VerifyPage = () => {
 
     try {
       const data = await verifyByIndexNumber(indexNumber.trim());
+      console.log('Verify by index response:', data);
       
       if (data.verified) {
         setResult({ 
           valid: true,
           method: 'blockchain',
-          blockchain: data.details,
-          message: 'Certificate verified on blockchain'
+          blockchain: data.certificate_details,
+          message: data.message || 'Certificate verified on blockchain'
         });
       } else if (data.error) {
         setError(data.error);
@@ -77,6 +84,7 @@ const VerifyPage = () => {
         setError(data.message || 'Certificate not found on blockchain');
       }
     } catch (err) {
+      console.error('Verify by index error:', err);
       setError('Blockchain verification failed. Make sure the blockchain service is running.');
     }
 
@@ -97,6 +105,7 @@ const VerifyPage = () => {
 
     try {
       const data = await verifyByFile(selectedFile);
+      console.log('Verify by file response:', data);
       
       if (data.verified) {
         setResult({ 
@@ -111,6 +120,7 @@ const VerifyPage = () => {
         setError(data.message || data.error || 'Certificate verification failed');
       }
     } catch (err) {
+      console.error('Verify by file error:', err);
       setError('File verification failed. Make sure the blockchain service is running.');
     }
 
@@ -190,7 +200,7 @@ const VerifyPage = () => {
                 id="indexNumber"
                 placeholder="e.g., 2023-OL-123456"
                 value={indexNumber}
-                onChange={(e) => setIndexNumber(e.target.value.toUpperCase())}
+                onChange={(e) => setIndexNumber(e.target.value)}
                 className={error ? 'input-error' : ''}
               />
             </div>
@@ -430,7 +440,13 @@ const VerifyPage = () => {
     </section>
   );
 
-  const renderBlockchainResult = () => (
+  const renderBlockchainResult = () => {
+    if (!result || !result.blockchain) {
+      console.error('renderBlockchainResult: No result or blockchain data', result);
+      return null;
+    }
+    
+    return (
     <section className="result-section">
       <div className="result-card valid blockchain-verified">
         <div className="result-header">
@@ -456,6 +472,12 @@ const VerifyPage = () => {
                 <span className="value"><strong>{result.blockchain.student_index}</strong></span>
               </div>
             )}
+            {result.blockchain.verification_code && (
+              <div className="detail-row">
+                <span className="label">Verification Code</span>
+                <span className="value"><strong>{result.blockchain.verification_code}</strong></span>
+              </div>
+            )}
             {result.blockchain.document_type && (
               <div className="detail-row">
                 <span className="label">Document Type</span>
@@ -468,10 +490,10 @@ const VerifyPage = () => {
                 <span className="value">{result.blockchain.exam_year}</span>
               </div>
             )}
-            {result.blockchain.issuer && (
+            {(result.blockchain.issuer || result.blockchain.issued_by) && (
               <div className="detail-row">
                 <span className="label">Issuer Address</span>
-                <span className="value hash"><code>{result.blockchain.issuer}</code></span>
+                <span className="value hash"><code>{result.blockchain.issuer || result.blockchain.issued_by}</code></span>
               </div>
             )}
             {result.blockchain.owner && (
@@ -480,16 +502,10 @@ const VerifyPage = () => {
                 <span className="value hash"><code>{result.blockchain.owner}</code></span>
               </div>
             )}
-            {result.blockchain.timestamp && (
+            {(result.blockchain.timestamp || result.blockchain.registration_timestamp) && (
               <div className="detail-row">
                 <span className="label">Registration Time</span>
-                <span className="value">{new Date(result.blockchain.timestamp * 1000).toLocaleString()}</span>
-              </div>
-            )}
-            {result.blockchain.registration_timestamp && (
-              <div className="detail-row">
-                <span className="label">Registration Time</span>
-                <span className="value">{new Date(result.blockchain.registration_timestamp * 1000).toLocaleString()}</span>
+                <span className="value">{new Date((result.blockchain.timestamp || result.blockchain.registration_timestamp) * 1000).toLocaleString()}</span>
               </div>
             )}
             {result.blockchain.is_valid !== undefined && (
@@ -514,7 +530,7 @@ const VerifyPage = () => {
         </div>
       </div>
     </section>
-  );
+  );};
 
   return (
     <div className="verify-page">

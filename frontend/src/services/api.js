@@ -103,14 +103,39 @@ export const getCertificatePreviewUrl = (certificateId) => {
   return `${API_URL}/api/certificates/${certificateId}/preview?token=${token}`;
 };
 
-// Public verification - by verification code (database)
+// Public verification - by verification code
+// First tries blockchain, then falls back to database
 export const verifyCertificate = async (data) => {
+  // Try blockchain first
+  try {
+    const blockchainResponse = await fetch(`${API_URL}/api/certificate/verify-by-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const blockchainData = await blockchainResponse.json();
+    
+    if (blockchainData.verified || blockchainData.exists) {
+      return {
+        valid: blockchainData.verified,
+        verified: blockchainData.verified,
+        message: blockchainData.message,
+        certificate: blockchainData.certificate_details,
+        source: 'blockchain'
+      };
+    }
+  } catch (e) {
+    console.log('Blockchain verification failed, trying database...');
+  }
+  
+  // Fall back to database
   const response = await fetch(`${API_URL}/api/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  return response.json();
+  const dbData = await response.json();
+  return { ...dbData, source: 'database' };
 };
 
 // Public verification - by student index number (blockchain)

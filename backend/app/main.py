@@ -37,6 +37,7 @@ os.makedirs(app.config['CERTIFICATES_FOLDER'], exist_ok=True)
 # Import services and initialize database
 from app.services.database import db, DatabaseService, init_sample_data, User
 from app.services.pdf_generator import CertificatePDFGenerator
+from app.services.blockchain_service import get_blockchain_service
 
 # Initialize SQLAlchemy with app
 db.init_app(app)
@@ -388,6 +389,63 @@ def issue_certificate(current_user):
     # Save certificate
     saved_cert = db_service.add_certificate(cert_data)
     
+    # Register certificate on blockchain
+    blockchain_registered = False
+    blockchain_tx = None
+    try:
+        blockchain_service = get_blockchain_service()
+        if blockchain_service:
+            # Calculate results hash for integrity verification
+            import json
+            import hashlib
+            subjects = result.get('subjects', [])
+            sorted_results = sorted(subjects, key=lambda x: x.get('subject_code', ''))
+            results_string = json.dumps(sorted_results, sort_keys=True, separators=(',', ':'))
+            results_hash = hashlib.sha256(results_string.encode()).hexdigest()
+            
+            # Calculate student info hash
+            student_info = f"{student.get('full_name', '')}|{student.get('school_name', '')}"
+            student_info_hash = hashlib.sha256(student_info.encode()).hexdigest()
+            
+            # Convert exam_type to blockchain format (OL -> O/L, AL -> A/L)
+            exam_type = result.get('exam_type', 'OL')
+            doc_type = 'O/L' if exam_type == 'OL' else 'A/L' if exam_type == 'AL' else exam_type
+            
+            # Handle None values for stream (OL exams don't have streams)
+            exam_subject = result.get('stream')
+            if exam_subject is None:
+                exam_subject = ''
+                
+            # Register on blockchain with document hash
+            blockchain_result = blockchain_service.register_document(
+                document_hash=doc_hash,
+                results_hash=results_hash,
+                verification_code=verification_code,
+                student_info_hash=student_info_hash,
+                owner_address='0x0000000000000000000000000000000000000000',
+                document_type=doc_type,
+                student_index=result.get('index_number', ''),
+                exam_year=int(result.get('exam_year', 2024)),
+                exam_subject=exam_subject
+            )
+            if blockchain_result.get('success'):
+                blockchain_registered = True
+                blockchain_tx = blockchain_result.get('transaction_hash')
+                print(f"Certificate registered on blockchain: {verification_code}, TX: {blockchain_tx}")
+                
+                # Update certificate with blockchain transaction hash
+                db_service.update_certificate(saved_cert.get('certificate_id'), {
+                    'blockchain_tx_hash': blockchain_tx
+                })
+                saved_cert['blockchain_tx_hash'] = blockchain_tx
+            else:
+                print(f"Blockchain registration failed: {blockchain_result.get('error')}")
+    except Exception as e:
+        print(f"Warning: Failed to register certificate on blockchain: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        # Continue even if blockchain registration fails - certificate is still valid in database
+    
     # Update result status
     db_service.update_result(result_id, {
         'status': 'issued'
@@ -396,7 +454,9 @@ def issue_certificate(current_user):
     return jsonify({
         'message': 'Certificate issued successfully',
         'certificate': saved_cert,
-        'verification_code': verification_code
+        'verification_code': verification_code,
+        'blockchain_registered': blockchain_registered,
+        'transaction_hash': blockchain_tx
     }), 201
 
 
@@ -507,6 +567,20 @@ def preview_certificate(current_user, certificate_id):
     )
 
 
+# ==================== HELPER FUNCTIONS ====================
+
+def _format_date(date_value):
+    """Format date value to string, handling both datetime and string inputs"""
+    if date_value is None:
+        return None
+    if isinstance(date_value, str):
+        return date_value
+    try:
+        return date_value.strftime('%Y-%m-%d')
+    except AttributeError:
+        return str(date_value)
+
+
 # ==================== PUBLIC VERIFICATION ROUTES ====================
 
 @app.route('/api/verify', methods=['POST'])
@@ -610,7 +684,7 @@ def verify_certificate():
                 'full_name_sinhala': student.get('full_name_sinhala') if student else None,
                 'full_name_tamil': student.get('full_name_tamil') if student else None,
                 'name_with_initials': student.get('name_with_initials') if student else None,
-                'date_of_birth': student.get('date_of_birth').strftime('%Y-%m-%d') if student and student.get('date_of_birth') else None,
+                'date_of_birth': _format_date(student.get('date_of_birth')) if student else None,
                 'school_name': student.get('school_name') if student else None,
                 'district': student.get('district') if student else None
             },
