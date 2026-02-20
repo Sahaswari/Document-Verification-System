@@ -1,4 +1,6 @@
 # Core requirements - install these first
+# setuptools<71 is required: pkg_resources was removed from setuptools>=71
+setuptools<71
 flask==3.0.0
 flask-cors==4.0.0
 python-dotenv==1.0.0

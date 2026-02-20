@@ -20,8 +20,9 @@ WORKDIR /app
 COPY requirements.txt .
 COPY requirements-core.txt .
 
-# Upgrade pip first
-RUN pip install --upgrade pip setuptools wheel
+# Upgrade pip first; pin setuptools<71 because pkg_resources was removed in setuptools>=71
+RUN pip install --upgrade pip wheel
+RUN pip install --no-cache-dir "setuptools<71"
 
 # Install core requirements first (smaller, faster)
 RUN pip install --no-cache-dir \
@@ -42,6 +43,9 @@ RUN pip install --no-cache-dir \
      pip install --no-cache-dir --default-timeout=100 imagehash==4.3.1 && \
      pip install --no-cache-dir --default-timeout=100 numpy==1.24.3 && \
      pip install --no-cache-dir --default-timeout=100 scikit-learn==1.3.2)
+
+# Ensure setuptools<71 is present after all deps (pkg_resources removed in >=71)
+RUN pip install --no-cache-dir "setuptools<71"
 
 # Copy application code
 COPY . .
