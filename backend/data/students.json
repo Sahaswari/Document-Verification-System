@@ -1,0 +1,41 @@
+[
+  {
+    "index_number": "2024-OL-123456",
+    "full_name": "Kamal Perera",
+    "name_with_initials": "K. Perera",
+    "nic_number": "200512345678",
+    "date_of_birth": "2005-03-15",
+    "gender": "Male",
+    "school_name": "Royal College, Colombo",
+    "school_code": "RC001",
+    "district": "Colombo",
+    "province": "Western",
+    "medium": "Sinhala"
+  },
+  {
+    "index_number": "2024-OL-123457",
+    "full_name": "Nimal Silva",
+    "name_with_initials": "N. Silva",
+    "nic_number": "200534567890",
+    "date_of_birth": "2005-07-22",
+    "gender": "Male",
+    "school_name": "Ananda College, Colombo",
+    "school_code": "AC001",
+    "district": "Colombo",
+    "province": "Western",
+    "medium": "Sinhala"
+  },
+  {
+    "index_number": "2023-AL-789012",
+    "full_name": "Sanduni Fernando",
+    "name_with_initials": "S. Fernando",
+    "nic_number": "200312345123",
+    "date_of_birth": "2003-11-08",
+    "gender": "Female",
+    "school_name": "Visakha Vidyalaya, Colombo",
+    "school_code": "VV001",
+    "district": "Colombo",
+    "province": "Western",
+    "medium": "Sinhala"
+  }
+]

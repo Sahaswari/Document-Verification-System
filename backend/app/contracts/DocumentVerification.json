@@ -1,0 +1,576 @@
+{
+  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "network": "localhost",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deploymentTime": "2026-01-27T04:47:09.439Z",
+  "abi": [
+    {
+      "type": "constructor",
+      "stateMutability": "undefined",
+      "payable": false,
+      "inputs": []
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "DocumentRegistered",
+      "inputs": [
+        {
+          "type": "string",
+          "name": "documentHash",
+          "indexed": true
+        },
+        {
+          "type": "string",
+          "name": "verificationCode",
+          "indexed": false
+        },
+        {
+          "type": "address",
+          "name": "issuer",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "owner",
+          "indexed": true
+        },
+        {
+          "type": "string",
+          "name": "documentType",
+          "indexed": false
+        },
+        {
+          "type": "string",
+          "name": "studentIndex",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "examYear",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "DocumentRevoked",
+      "inputs": [
+        {
+          "type": "string",
+          "name": "documentHash",
+          "indexed": true
+        },
+        {
+          "type": "string",
+          "name": "verificationCode",
+          "indexed": false
+        },
+        {
+          "type": "address",
+          "name": "revokedBy",
+          "indexed": true
+        },
+        {
+          "type": "string",
+          "name": "reason",
+          "indexed": false
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "IssuerAuthorized",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "issuer",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "authorizedBy",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "IssuerRevoked",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "issuer",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "revokedBy",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "authorizeIssuer",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_issuer"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "authorizedIssuers",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": ""
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getDocumentByCode",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_verificationCode"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "string",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getStatistics",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "uint256",
+          "name": "total"
+        },
+        {
+          "type": "uint256",
+          "name": "revoked"
+        },
+        {
+          "type": "uint256",
+          "name": "active"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getStudentCertificates",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_studentIndex"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "string[]",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getUserDocuments",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_user"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "string[]",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isAuthorizedIssuer",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_issuer"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "address",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "registerDocument",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        },
+        {
+          "type": "string",
+          "name": "_resultsHash"
+        },
+        {
+          "type": "string",
+          "name": "_verificationCode"
+        },
+        {
+          "type": "string",
+          "name": "_studentInfoHash"
+        },
+        {
+          "type": "address",
+          "name": "_owner"
+        },
+        {
+          "type": "string",
+          "name": "_documentType"
+        },
+        {
+          "type": "string",
+          "name": "_studentIndex"
+        },
+        {
+          "type": "uint256",
+          "name": "_examYear"
+        },
+        {
+          "type": "string",
+          "name": "_examSubject"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "revokeDocument",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        },
+        {
+          "type": "string",
+          "name": "_reason"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "revokeIssuer",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_issuer"
+        }
+      ],
+      "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "totalCertificates",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "uint256",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "totalRevoked",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "uint256",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "verifyByCode",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_verificationCode"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "exists"
+        },
+        {
+          "type": "bool",
+          "name": "isValid"
+        },
+        {
+          "type": "string",
+          "name": "documentHash"
+        },
+        {
+          "type": "string",
+          "name": "resultsHash"
+        },
+        {
+          "type": "string",
+          "name": "documentType"
+        },
+        {
+          "type": "string",
+          "name": "studentIndex"
+        },
+        {
+          "type": "uint256",
+          "name": "examYear"
+        },
+        {
+          "type": "string",
+          "name": "examSubject"
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp"
+        },
+        {
+          "type": "address",
+          "name": "issuer"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "verifyByStudentIndex",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_studentIndex"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "exists"
+        },
+        {
+          "type": "bool",
+          "name": "isValid"
+        },
+        {
+          "type": "string",
+          "name": "documentHash"
+        },
+        {
+          "type": "string",
+          "name": "resultsHash"
+        },
+        {
+          "type": "string",
+          "name": "verificationCode"
+        },
+        {
+          "type": "string",
+          "name": "documentType"
+        },
+        {
+          "type": "uint256",
+          "name": "examYear"
+        },
+        {
+          "type": "string",
+          "name": "examSubject"
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp"
+        },
+        {
+          "type": "uint256",
+          "name": "certificateCount"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "verifyDocument",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "exists"
+        },
+        {
+          "type": "bool",
+          "name": "isValid"
+        },
+        {
+          "type": "address",
+          "name": "issuer"
+        },
+        {
+          "type": "address",
+          "name": "documentOwner"
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp"
+        },
+        {
+          "type": "string",
+          "name": "documentType"
+        },
+        {
+          "type": "string",
+          "name": "verificationCode"
+        },
+        {
+          "type": "string",
+          "name": "resultsHash"
+        },
+        {
+          "type": "string",
+          "name": "studentIndex"
+        },
+        {
+          "type": "uint256",
+          "name": "examYear"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "verifyResultsIntegrity",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "string",
+          "name": "_documentHash"
+        },
+        {
+          "type": "string",
+          "name": "_providedResultsHash"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": "matches"
+        },
+        {
+          "type": "string",
+          "name": "storedHash"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# Core requirements - install these first
+# setuptools<71 is required: pkg_resources was removed from setuptools>=71
+setuptools<71
+flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+werkzeug==3.0.1
+
+# Authentication & Database
+PyJWT==2.8.0
+SQLAlchemy==2.0.23
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+
+# Blockchain
+web3==6.11.3

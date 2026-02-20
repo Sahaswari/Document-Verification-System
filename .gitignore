@@ -1,0 +1,189 @@
+.env
+certificates/
+# ==================== Environment Variables ====================
+.env
+.env.local
+.env.*.local
+
+# ==================== Python ====================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# PyCharm
+.idea/
+
+# Python eggs
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# ==================== Node.js / JavaScript ====================
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Package lock files (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ==================== Blockchain / Hardhat ====================
+# Hardhat files
+cache/
+artifacts/
+coverage/
+coverage.json
+typechain/
+typechain-types/
+
+# Deployed contract data (KEEP THIS - needed for backend)
+# deployed/
+
+# Hardhat network files
+.hardhat/
+
+# ==================== Database ====================
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL
+*.sql
+pg_data/
+
+# ==================== Frontend / React ====================
+# Production
+build/
+dist/
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ==================== IDEs / Editors ====================
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==================== OS ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ==================== Uploads / Generated Files ====================
+# Uploaded files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Generated certificates
+backend/certificates/*
+!backend/certificates/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# ==================== Documentation (Generated) ====================
+# Keep all .md files - these are important guides!
+# If you have auto-generated docs, add them here:
+# docs/_build/
+
+# ==================== Docker ====================
+# Docker volumes
+docker-compose.override.yml
+.docker/
+
+# ==================== Misc ====================
+# Logs
+logs/
+*.log
+
+# Lock files
+.lock
+
+# Backup files
+*.bak
+*.swp
+*.swo
+
+# ==================== Project Specific ====================
+# Keep these important files:
+# !QUICK_START.md
+# !BLOCKCHAIN_GUIDE.md
+# !IMPLEMENTATION_SUMMARY.md
+# !ARCHITECTURE.md
+# !FILE_INDEX.md
